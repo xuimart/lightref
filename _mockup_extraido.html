@@ -1,0 +1,1829 @@
+<!doctype html>
+<html lang="pt-BR" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>LightRef — Vertical</title>
+<style>:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, "Segoe UI", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 17'%3E%3Cpath d='M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z'/%3E%3C/svg%3E");
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html > body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+.cursor-interaction {
+  cursor: var(--cursor-interaction, pointer);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: var(--cursor-interaction, pointer);
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive > .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align="right"]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align="center"]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget > :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls > .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls > .form-label > :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled="true"]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type="file"] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type="file"]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type="file"]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type="color"] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type="checkbox"] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type="checkbox"]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type="checkbox"]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: "";
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type="radio"]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: "";
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed="true"],
+  [aria-selected="true"],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed="true"], [aria-selected="true"], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type="file"]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type="color"] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type="date"],
+    [type="datetime-local"],
+    [type="month"],
+    [type="time"],
+    [type="week"]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget > svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html>body{padding:0}</style>
+</head>
+<body>
+<script type="application/json" id="codex-visualization-widget-state">__CODEX_VISUALIZATION_WIDGET_STATE__</script>
+<script>(() => {
+  const root = document.documentElement;
+  const mediaQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
+  const apply = Reflect.apply;
+  const isArray = Array.isArray;
+  const hasOwn = Object.hasOwn;
+  const parentWindow = globalThis.parent;
+  const stringify = JSON.stringify;
+  const parse = JSON.parse;
+  const encode = TextEncoder.prototype.encode.bind(new TextEncoder());
+  const initialStateElement = document.getElementById(
+    "codex-visualization-widget-state",
+  );
+  const initialGlobals = parse(initialStateElement?.textContent ?? "{}");
+  initialStateElement?.remove();
+  /** @type {Record<string, unknown> | null} */
+  let state = initialGlobals.widgetState ?? null;
+  const statePersistence = initialGlobals.statePersistence ?? "none";
+  let nextStateRequestId = 0;
+  /** @type {Map<number, { resolve: () => void; reject: (error: Error) => void; timeout: ReturnType<typeof globalThis.setTimeout>; serializedState: string }>} */
+  const pendingStateWrites = new Map();
+  const persistenceError = () =>
+    Object.assign(
+      new Error("The host could not persist the widget state update"),
+      {
+        code: -32000,
+        data: { code: "widget_state_persistence_failed", retryable: false },
+      },
+    );
+  /**
+   * @param {object} prototype
+   * @param {string} property
+   */
+  const getPrototypeGetter = (prototype, property) => {
+    // oxlint-disable-next-line typescript/unbound-method -- invoked through captured Reflect.apply
+    const getter = Object.getOwnPropertyDescriptor(prototype, property)?.get;
+    if (getter == null) {
+      throw new Error(`Missing ${property} getter`);
+    }
+    return getter;
+  };
+  const getMessageData = getPrototypeGetter(MessageEvent.prototype, "data");
+  const getMessagePorts = getPrototypeGetter(MessageEvent.prototype, "ports");
+  const getMessageSource = getPrototypeGetter(MessageEvent.prototype, "source");
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const addHostMessageListener = MessagePort.prototype.addEventListener;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const postHostMessage = MessagePort.prototype.postMessage;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const startHostPort = MessagePort.prototype.start;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const stopMessagePropagation = Event.prototype.stopImmediatePropagation;
+  /** @type {MessagePort | null} */
+  let hostPort = null;
+  const postToHost = (type, payload) => {
+    if (hostPort != null) {
+      apply(postHostMessage, hostPort, [{ type, ...payload }]);
+    }
+  };
+  const openExternal = ({ href }) => {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost("open-external", { href });
+    }
+  };
+  const sendFollowUpMessage = ({ context, prompt, title }) => {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost("follow-up", { context, prompt, title });
+    }
+    return Promise.resolve();
+  };
+  /**
+   * @param {Record<string, unknown> | ((previous: Record<string, unknown> | null) => Record<string, unknown>)} next
+   * @returns {Promise<void>}
+   */
+  const setWidgetState = async (next) => {
+    const nextState = typeof next === "function" ? next(state) : next;
+    if (
+      nextState == null ||
+      typeof nextState !== "object" ||
+      isArray(nextState)
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const inputState = stringify(
+      nextState,
+      (_key, /** @type {unknown} */ value) => {
+        if (
+          typeof value === "undefined" ||
+          typeof value === "function" ||
+          typeof value === "symbol" ||
+          (typeof value === "number" && !Number.isFinite(value))
+        ) {
+          throw new TypeError("Widget state must be a JSON object");
+        }
+        return value;
+      },
+    );
+    const parsedState = parse(inputState);
+    if (
+      parsedState == null ||
+      typeof parsedState !== "object" ||
+      isArray(parsedState)
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const storedState = {
+      modelContent: null,
+      privateContent: null,
+      ...parsedState,
+    };
+    const serializedState = stringify(storedState);
+    if (encode(serializedState).length > 16 * 1024) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    if (
+      hasOwn(storedState, "imageIds") &&
+      (!isArray(storedState.imageIds) ||
+        storedState.imageIds.some(
+          (/** @type {unknown} */ id) => typeof id !== "string",
+        ))
+    ) {
+      throw new TypeError("Widget state imageIds must be an array of strings");
+    }
+    if (storedState.imageIds?.length > 0) {
+      throw Object.assign(
+        new TypeError("Visualization state does not support image attachments"),
+        { code: -32602, data: { code: "images_unsupported" } },
+      );
+    }
+    state = storedState;
+    globalThis.openai.widgetState = state;
+    globalThis.dispatchEvent(
+      new CustomEvent("openai:set_globals", {
+        detail: { globals: { widgetState: state } },
+      }),
+    );
+    if (statePersistence === "none") {
+      throw persistenceError();
+    }
+    const id = ++nextStateRequestId;
+    return new Promise((resolve, reject) => {
+      const timeout = globalThis.setTimeout(() => {
+        pendingStateWrites.delete(id);
+        reject(persistenceError());
+      }, 30_000);
+      pendingStateWrites.set(id, { resolve, reject, timeout, serializedState });
+      postToHost("widget-state-write", { id, state: serializedState });
+    });
+  };
+  const syncTheme = () => {
+    const theme = mediaQuery.matches ? "dark" : "light";
+    root.dataset.theme = theme;
+    globalThis.openai = {
+      ...globalThis.openai,
+      openExternal,
+      sendFollowUpMessage,
+      setWidgetState,
+      theme,
+      visualizationStyleVariables: {},
+      visualizationTheme: theme,
+      widgetState: state,
+      statePersistence,
+      stateModelContext: "none",
+    };
+    globalThis.dispatchEvent(
+      new CustomEvent("openai:set_globals", {
+        detail: { globals: globalThis.openai },
+      }),
+    );
+  };
+  const sendHeight = () => {
+    postToHost("height", {
+      height: Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ),
+    });
+  };
+
+  globalThis.addEventListener(
+    "message",
+    (event) => {
+      const data = apply(getMessageData, event, []);
+      const ports = apply(getMessagePorts, event, []);
+      const source = apply(getMessageSource, event, []);
+      if (
+        hostPort != null ||
+        source !== parentWindow ||
+        typeof data !== "object" ||
+        data?.type !== "codex-visualization-initialize" ||
+        !isArray(ports) ||
+        ports.length !== 1
+      ) {
+        return;
+      }
+      apply(stopMessagePropagation, event, []);
+      const nextHostPort = ports[0];
+      try {
+        apply(addHostMessageListener, nextHostPort, [
+          "message",
+          (event) => {
+            const data = apply(getMessageData, event, []);
+            if (typeof data === "object" && data?.type === "measure") {
+              sendHeight();
+            } else if (
+              typeof data === "object" &&
+              data?.type === "widget-state-result"
+            ) {
+              /** @type {unknown} */
+              const id = data.id;
+              if (typeof id !== "number") {
+                return;
+              }
+              const pending = pendingStateWrites.get(id);
+              if (pending != null) {
+                pendingStateWrites.delete(id);
+                globalThis.clearTimeout(pending.timeout);
+                if (data.ok === true) {
+                  pending.resolve();
+                } else {
+                  pending.reject(persistenceError());
+                }
+              }
+            }
+          },
+        ]);
+        apply(startHostPort, nextHostPort, []);
+      } catch {
+        return;
+      }
+      hostPort = nextHostPort;
+      for (const [id, { serializedState }] of pendingStateWrites) {
+        postToHost("widget-state-write", { id, state: serializedState });
+      }
+      sendHeight();
+    },
+    { capture: true },
+  );
+  document.currentScript?.remove();
+  mediaQuery.addEventListener("change", syncTheme);
+  globalThis.addEventListener("click", (event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let element = null;
+    if (event.target instanceof globalThis.Element) {
+      element = event.target;
+    } else if (event.target instanceof globalThis.Node) {
+      element = event.target.parentElement;
+    }
+    const link = element?.closest("a[href]");
+    const href = link?.getAttribute("href");
+    if (href == null) {
+      return;
+    }
+    if (href.startsWith("#")) {
+      let id;
+      try {
+        id = decodeURIComponent(href.slice(1));
+      } catch {
+        return;
+      }
+      const target = id.length === 0 ? root : document.getElementById(id);
+      if (
+        target == null ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      event.preventDefault();
+      postToHost("scroll-to", {
+        top: target.getBoundingClientRect().top + globalThis.scrollY,
+      });
+      return;
+    }
+    event.preventDefault();
+    openExternal({ href });
+  });
+  new ResizeObserver(sendHeight).observe(document.body);
+  syncTheme();
+})();
+</script>
+<div id="lightref-selected" aria-label="LightRef — layout escolhido">
+ <div class="lf-panel">
+  <nav class="lf-mainnav" aria-label="Navegação principal"><button data-page="studio" aria-pressed="true">3D</button><button data-page="library" aria-pressed="false">Biblioteca</button><button data-page="packs" aria-pressed="false">Pacotes</button><button data-page="scenes" aria-pressed="false">Cenas</button></nav>
+  <div class="lf-topbar"><select class="lf-model" aria-label="Modelo"><option value="bust">Busto</option><option value="head">Cabeça</option><option value="torso">Torso</option></select><div class="lf-projection" aria-label="Projeção"><button data-projection="persp" aria-pressed="false">Persp</button><button data-projection="ortho" aria-pressed="true">Orto</button></div><div class="lf-filetools"><button data-action="save" aria-label="Salvar cena" data-tooltip="Salvar cena"><i data-lucide="bookmark" aria-hidden="true"></i></button><button data-action="download" aria-label="Baixar imagem" data-tooltip="Baixar imagem"><i data-lucide="download" aria-hidden="true"></i></button><button data-action="import" aria-label="Importar modelo" data-tooltip="Importar modelo"><i data-lucide="upload" aria-hidden="true"></i></button><button data-action="reset" aria-label="Restaurar cena" data-tooltip="Restaurar cena"><i data-lucide="undo-2" aria-hidden="true"></i></button></div></div>
+  <div class="lf-stage"><canvas aria-label="Busto geométrico ilustrativo. Arraste para girar."></canvas><div class="lf-viewtools"><button data-action="camera" aria-label="Resetar câmera" data-tooltip="Resetar câmera"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button><button data-action="floor" aria-label="Chão com sombra" aria-pressed="true" data-tooltip="Chão com sombra"><i data-lucide="mountain" aria-hidden="true"></i></button><button data-action="guides" aria-label="Guias de luz" aria-pressed="true" data-tooltip="Guias de luz"><i data-lucide="crosshair" aria-hidden="true"></i></button><button data-action="reference" aria-label="Modo referência" aria-pressed="false" data-tooltip="Modo referência"><i data-lucide="eye" aria-hidden="true"></i></button></div><button class="lf-help" data-action="help" aria-label="Ajuda"><i data-lucide="circle-help" aria-hidden="true"></i></button><div class="lf-guide" aria-hidden="true"></div></div>
+  <section class="lf-tray" aria-label="Propriedades"><div class="lf-traybar"><button class="lf-collapse" data-action="collapse" aria-label="Recolher controles" aria-expanded="true"><i data-lucide="chevron-down" aria-hidden="true"></i></button><nav class="lf-tabs" aria-label="Controles"><button data-tab="form" aria-pressed="false">Forma</button><button data-tab="light" aria-pressed="true">Luz</button><button data-tab="lens" aria-pressed="false">Lente</button></nav><div class="lf-traytools"><button data-action="adjust" aria-label="Ajustes da imagem" data-tooltip="Ajustes da imagem"><i data-lucide="image" aria-hidden="true"></i></button><button data-action="download" aria-label="Baixar referência" data-tooltip="Baixar referência"><i data-lucide="download" aria-hidden="true"></i></button></div></div><div class="lf-controls"></div></section>
+  <section class="lf-catalog" aria-label="Biblioteca e cenas" hidden></section>
+  <div class="lf-exportbar"><button data-action="photoshop">Jogar como camada <i data-lucide="arrow-up-right" aria-hidden="true"></i></button><button data-action="export" aria-label="Opções de exportação"><i data-lucide="chevron-down" aria-hidden="true"></i></button></div><div class="lf-feedback" aria-live="polite">LightRef · prévia de interface</div>
+  <div class="lf-dialog" role="dialog" aria-modal="true" aria-labelledby="lf-dialog-title" hidden><div class="lf-dialogcard"><header><strong id="lf-dialog-title"></strong><button data-action="close" aria-label="Fechar"><i data-lucide="x" aria-hidden="true"></i></button></header><div class="lf-dialogbody"></div></div></div>
+ </div>
+</div>
+<style>
+#lightref-selected{--lf-accent:#dd2358;--lf-panelwidth:440px;font:14px/1.4 'Segoe UI',sans-serif;color:#dbdbdb;color-scheme:dark;width:100%}#lightref-selected *{box-sizing:border-box}#lightref-selected button,#lightref-selected select,#lightref-selected input{font:inherit}#lightref-selected button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:5px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#dbdbdb}#lightref-selected button:hover{background:#393939}#lightref-selected button:focus-visible,#lightref-selected input:focus-visible,#lightref-selected select:focus-visible{outline:2px solid var(--lf-accent);outline-offset:2px}#lightref-selected button:disabled{opacity:.4}#lightref-selected svg{width:17px;height:17px;flex-shrink:0}#lightref-selected .lf-panel{width:var(--lf-panelwidth);max-width:100%;margin:auto;background:#232323;border:1px solid #373737;border-radius:5px;position:relative;overflow:hidden;container-type:inline-size}#lightref-selected .lf-mainnav{display:flex;gap:9px;padding:10px 10px 8px}#lightref-selected .lf-mainnav button{color:#a6a6a6;border-radius:24px;padding:5px 12px;font-size:14px;min-height:35px}#lightref-selected .lf-mainnav button[aria-pressed=true]{color:#dbdbdb;background:#2e2e2e}#lightref-selected .lf-topbar{display:flex;align-items:center;gap:7px;padding:0 10px 10px}#lightref-selected select{color:#dbdbdb;background:#2d2d2d;border:1px solid transparent;border-radius:8px;height:34px;padding:4px 9px;min-width:0;font-size:13px}#lightref-selected .lf-model{flex:1;min-width:78px}#lightref-selected .lf-projection{display:flex;background:#2b2b2b;border-radius:8px;padding:2px}#lightref-selected .lf-projection button{min-height:29px;padding:3px 8px;color:#a6a6a6;border-radius:6px;font-size:12px}#lightref-selected .lf-projection button[aria-pressed=true]{background:#414141;color:#e4e4e4}#lightref-selected .lf-filetools,#lightref-selected .lf-traytools{display:flex;gap:5px}#lightref-selected .lf-filetools button,#lightref-selected .lf-traytools button{background:#2c2c2c;width:32px;height:34px;padding:6px;color:#a5a5a5}#lightref-selected .lf-stage{position:relative;margin:0 3px;background:#3b4b6b;aspect-ratio:1.18;min-height:268px;max-height:580px;overflow:hidden}#lightref-selected canvas{width:100%;height:100%;position:absolute;inset:0;touch-action:none;cursor:grab}#lightref-selected canvas:active{cursor:grabbing}#lightref-selected .lf-viewtools{display:flex;gap:5px;position:absolute;left:8px;top:9px}#lightref-selected .lf-viewtools button,#lightref-selected .lf-help{width:28px;height:28px;min-height:28px;padding:5px;background:#23262d;border:1px solid #3d4452;border-radius:6px;color:#b9bec8}#lightref-selected .lf-viewtools button[aria-pressed=true][data-action=guides],#lightref-selected .lf-viewtools button[aria-pressed=true][data-action=reference]{color:var(--lf-accent);border-color:var(--lf-accent)}#lightref-selected .lf-help{position:absolute;right:8px;top:9px}#lightref-selected .lf-guide{pointer-events:none;position:absolute;left:18%;top:38%;width:9px;height:9px;border:1px solid #cfdbed66;border-radius:50%}#lightref-selected .lf-traybar{display:flex;align-items:center;padding:10px 10px 7px;gap:5px}#lightref-selected .lf-collapse{padding:4px;width:24px;color:#a6a6a6}#lightref-selected .lf-tabs{display:flex;gap:4px;flex:1}#lightref-selected .lf-tabs button{padding:5px 10px;color:#a6a6a6;border-radius:24px;font-size:14px}#lightref-selected .lf-tabs button[aria-pressed=true]{background:#2e2e2e;color:#e1e1e1}#lightref-selected .lf-controls{padding:6px 12px 13px}#lightref-selected .lf-setup{display:grid;grid-template-columns:92px minmax(0,1fr) 32px;gap:8px;align-items:center;margin-bottom:9px;font-size:13px;color:#a6a6a6}#lightref-selected .lf-setup button{background:#2e2e2e;padding:3px;height:34px}#lightref-selected .lf-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}#lightref-selected .lf-chip{display:flex;align-items:center;border-radius:22px;background:#2d2d2d;padding:1px 4px 1px 2px}#lightref-selected .lf-chip.active{background:#434343}#lightref-selected .lf-chip button{font-size:12px;min-height:29px;border-radius:20px;padding:4px 7px}#lightref-selected .lf-chip button[data-remove]{padding:3px;width:21px;color:#878787}#lightref-selected .lf-chip svg{width:12px;height:12px}#lightref-selected .lf-dot{width:10px;height:10px;border-radius:50%;display:block;flex-shrink:0}#lightref-selected .lf-colorrow{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:9px;min-height:43px;font-size:13px;color:#a6a6a6}#lightref-selected input[type=color]{border:3px solid #333638;border-radius:8px;width:35px;height:35px;padding:0;background:transparent}#lightref-selected input[type=color]::-webkit-color-swatch-wrapper{padding:0}#lightref-selected input[type=color]::-webkit-color-swatch{border:0;border-radius:5px}#lightref-selected .lf-check{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;color:#a6a6a6}#lightref-selected input[type=checkbox]{accent-color:#dcdcdc;width:14px;height:14px;margin:0}#lightref-selected .lf-row{display:grid;grid-template-columns:92px minmax(0,1fr) 44px;gap:8px;align-items:center;min-height:38px;font-size:13px;color:#a6a6a6}#lightref-selected input[type=range]{--fill:50%;appearance:none;background:linear-gradient(to right,#cbcbcb 0 var(--fill),#494949 var(--fill) 100%);height:4px;border-radius:5px;width:100%;margin:0;min-width:0}#lightref-selected input[type=range]::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border-radius:50%;background:#eeeeee;border:1px solid #d1d1d1;box-shadow:0 1px 4px #161616}#lightref-selected input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#eeeeee;border:1px solid #d1d1d1}#lightref-selected output{font-size:12px;text-align:right;color:#a6a6a6;font-variant-numeric:tabular-nums}#lightref-selected .lf-formrow{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:8px;min-height:42px;font-size:13px;color:#a6a6a6}#lightref-selected .lf-viewpresets{display:flex;gap:5px;margin-top:11px;flex-wrap:wrap}#lightref-selected .lf-viewpresets button{flex:1;font-size:12px;background:#303030}#lightref-selected .lf-exportbar{display:flex;gap:2px;padding:10px 12px 5px;border-top:1px solid #333333}#lightref-selected .lf-exportbar button{background:var(--lf-accent);color:#f7eef1;min-height:36px;font-size:13px}#lightref-selected .lf-exportbar button:first-child{flex:1;font-weight:500}#lightref-selected .lf-exportbar button:last-child{width:32px;padding:5px}#lightref-selected .lf-feedback{padding:4px 10px 9px;text-align:center;color:#999999;font-size:11px;min-height:28px}#lightref-selected .lf-dialog{position:absolute;inset:0;z-index:20;background:#17171788;display:flex;align-items:flex-start;justify-content:center;padding:85px 12px 20px}#lightref-selected .lf-dialogcard{width:100%;max-width:375px;background:#2b2b2b;border:1px solid #4a4a4a;border-radius:10px;padding:12px;box-shadow:0 12px 35px #17171788}#lightref-selected .lf-dialogcard header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;font-size:14px}#lightref-selected .lf-dialogcard strong{font-weight:500}#lightref-selected .lf-dialogcard p{font-size:13px;line-height:1.6;color:#bdbdbd;margin:8px 0}#lightref-selected .lf-dialogcard .lf-row{grid-template-columns:80px minmax(0,1fr) 37px;gap:6px}#lightref-selected .lf-dialogcard .lf-check{margin:10px 0}#lightref-selected .lf-dialogcard button:not(header button){background:#393939;font-size:12px;min-height:34px}#lightref-selected .lf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}#lightref-selected .lf-catalog{padding:12px;min-height:460px}#lightref-selected .lf-catalog h3{font-size:14px;font-weight:500;margin:0 0 15px}#lightref-selected .lf-card{display:flex;flex-direction:column;align-items:stretch!important;background:#2d2d2d!important;border:1px solid #414141!important;padding:9px!important;text-align:left;font-size:13px!important;gap:10px!important}#lightref-selected .lf-card img{width:100%;height:112px;object-fit:cover;background:#3b4b6b;border-radius:5px}#lightref-selected .lf-placeholder{display:grid;place-items:center;background:#3a465d;border-radius:5px;height:95px;color:#c2c7ce}#lightref-selected .lf-placeholder svg{width:35px;height:35px}#lightref-selected .lf-card small{font-size:11px;color:#aaa}#lightref-selected .lf-empty{font-size:13px;color:#b1b1b1;padding:25px 5px}#lightref-selected .lf-collapsed .lf-controls{display:none}#lightref-selected .lf-collapsed .lf-collapse svg{transform:rotate(180deg)}#lightref-selected .lf-reference .lf-tray,#lightref-selected .lf-reference .lf-topbar,#lightref-selected .lf-reference .lf-guide{display:none}#lightref-selected .lf-reference .lf-stage{aspect-ratio:auto;height:545px;max-height:none}#lightref-selected [hidden]{display:none!important}
+@container(max-width:365px){#lightref-selected .lf-topbar{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:6px}#lightref-selected .lf-filetools{grid-column:1/-1;justify-content:flex-end}#lightref-selected .lf-mainnav{gap:3px;padding-left:7px;padding-right:7px}#lightref-selected .lf-mainnav button{font-size:13px;padding:4px 9px}#lightref-selected .lf-row{grid-template-columns:77px minmax(0,1fr) 40px;gap:7px;font-size:12px}#lightref-selected .lf-setup,#lightref-selected .lf-colorrow{grid-template-columns:77px minmax(0,1fr) auto;gap:7px;font-size:12px}#lightref-selected .lf-tabs{gap:0}#lightref-selected .lf-tabs button{padding:4px 8px;font-size:13px}#lightref-selected .lf-traybar{padding-left:7px;padding-right:7px;gap:2px}#lightref-selected .lf-traytools{gap:3px}#lightref-selected .lf-traytools button{width:28px}#lightref-selected .lf-formrow{grid-template-columns:77px minmax(0,1fr);font-size:12px}}
+#lightref-selected .lf-stage{width:calc(100% - 6px);min-width:0}
+@container (min-width:321px) and (max-width:365px){#lightref-selected .lf-topbar{display:flex;gap:5px}#lightref-selected .lf-filetools{gap:3px}#lightref-selected .lf-filetools button{width:27px;padding:4px}#lightref-selected .lf-projection button{padding:3px 6px}}
+/* Visual refinement only: the layout and existing interaction code are retained. */
+#lightref-selected .lf-panel{background:#242528;border-color:#3b3c40;border-radius:10px}
+#lightref-selected .lf-mainnav{gap:6px;padding-top:12px;padding-bottom:12px}
+#lightref-selected .lf-mainnav button{font-size:13px;color:#aaadb5;min-height:33px}
+#lightref-selected .lf-mainnav button[aria-pressed=true]{background:#393039;color:#f3bacb}
+#lightref-selected .lf-topbar{padding-bottom:12px}
+#lightref-selected select{background:#303136;border-color:#3e4046;border-radius:6px;color:#e1e2e6}
+#lightref-selected .lf-projection{background:#202125;border:1px solid #3b3c41;border-radius:7px}
+#lightref-selected .lf-projection button[aria-pressed=true]{background:#42444b;color:#e9e9ec}
+#lightref-selected .lf-filetools{border-left:1px solid #44454b;padding-left:6px;gap:3px}
+#lightref-selected .lf-filetools button{background:transparent;color:#b5b7c0;border-radius:6px;width:30px}
+#lightref-selected .lf-filetools button:hover{background:#3a3b41}
+#lightref-selected .lf-viewtools{background:#252932;border:1px solid #565f7170;border-radius:7px;padding:2px;gap:2px}
+#lightref-selected .lf-viewtools button{border-color:transparent;background:transparent;border-radius:4px}
+#lightref-selected .lf-viewtools button[aria-pressed=true][data-action=guides]{background:#3c2c3c;border-color:#dd235877}
+#lightref-selected .lf-help{background:#252932;border-color:#565f7170}
+#lightref-selected .lf-traybar{padding-top:9px;padding-bottom:0;border-bottom:1px solid #3a3c42;gap:5px}
+#lightref-selected .lf-tabs{gap:3px;align-self:stretch}
+#lightref-selected .lf-tabs button{border-radius:0;min-height:43px;padding:7px 10px;color:#aeb0b8;font-size:13px;border-bottom:2px solid transparent}
+#lightref-selected .lf-tabs button[aria-pressed=true]{background:transparent;color:#ececef;border-bottom-color:var(--lf-accent)}
+#lightref-selected .lf-traytools{padding-bottom:7px}
+#lightref-selected .lf-traytools button{background:#303136;color:#b9bbc4;border:1px solid #3c3e44;border-radius:6px}
+#lightref-selected .lf-collapse{color:#b3b5bd;margin-bottom:7px}
+#lightref-selected .lf-controls{padding-top:13px;padding-bottom:15px}
+#lightref-selected .lf-setup{margin-bottom:10px;color:#b5b7bf}
+#lightref-selected .lf-setup button{background:#303136;border:1px solid #3e4046;border-radius:6px}
+#lightref-selected .lf-chips{gap:7px;margin-bottom:15px}
+#lightref-selected .lf-chip{background:#2d2e33;border:1px solid #45464e;border-radius:7px;padding:0 3px 0 1px}
+#lightref-selected .lf-chip.active{background:#3d303a;border-color:var(--lf-accent)}
+#lightref-selected .lf-chip button{border-radius:5px;color:#ced0d8}
+#lightref-selected .lf-chip.active button[data-light]{color:#f1dce3}
+#lightref-selected .lf-chip button[data-remove]{color:#a4a1aa}
+#lightref-selected .lf-colorrow{margin-bottom:12px;color:#b5b7bf}
+#lightref-selected input[type=color]{border-color:#4a4d55;border-radius:7px}
+#lightref-selected .lf-check{color:#b5b7bf}
+#lightref-selected .lf-row{grid-template-columns:92px minmax(0,1fr) 54px;min-height:39px;color:#b5b7bf}
+#lightref-selected output{background:#303137;border:1px solid #3d3f46;border-radius:5px;min-height:25px;display:flex;align-items:center;justify-content:center;color:#d8dae2;padding:2px 3px;font-size:11px}
+#lightref-selected input[type=range]{background:linear-gradient(to right,#d1d2d8 0 var(--fill),#484a52 var(--fill) 100%)}
+#lightref-selected input[type=range]::-webkit-slider-thumb{width:14px;height:14px;background:#e8e9ee;border-color:#cdd0da}
+#lightref-selected .lf-formrow{color:#b5b7bf}
+#lightref-selected .lf-exportbar{border-color:#3a3c42;padding-top:11px}
+#lightref-selected .lf-exportbar button{background:#b92e53;border-radius:6px}
+#lightref-selected .lf-exportbar button:hover{background:#d03661}
+#lightref-selected .lf-feedback{color:#a6a8b0}
+#lightref-selected .lf-dialogcard{background:#2b2d32;border-color:#4a4c55}
+#lightref-selected .lf-dialogcard .lf-row{grid-template-columns:80px minmax(0,1fr) 48px}
+@container(max-width:365px){
+ #lightref-selected .lf-mainnav{gap:3px}
+ #lightref-selected .lf-mainnav button{padding-left:8px;padding-right:8px}
+ #lightref-selected .lf-filetools{padding-left:4px;gap:2px}
+ #lightref-selected .lf-filetools button{width:25px}
+ #lightref-selected .lf-row{grid-template-columns:77px minmax(0,1fr) 49px;gap:7px}
+ #lightref-selected .lf-tabs{gap:0}
+ #lightref-selected .lf-tabs button{padding-left:8px;padding-right:8px}
+ #lightref-selected .lf-traybar{gap:2px}
+}
+/* 01 — Vertical: próximo da referência, com controles em uma coluna. */
+#lightref-selected{--lf-panelwidth:440px}
+#lightref-selected .lf-panel{border-radius:8px}
+#lightref-selected .lf-mainnav button[aria-pressed=true]{background:#343039;color:#efced8}
+#lightref-selected .lf-traybar{border-bottom:1px solid #35363c}
+#lightref-selected .lf-tabs button[aria-pressed=true]{border-radius:18px;background:#38343c;color:#f0dfe6;border-bottom-color:transparent}
+#lightref-selected .lf-tabs button{min-height:33px;margin-bottom:7px}
+#lightref-selected .lf-stage{aspect-ratio:1.18}
+#lightref-selected .lf-row{min-height:40px}
+
+</style>
+<script>
+(()=>{
+const root=document.getElementById('lightref-selected'),panel=root.querySelector('.lf-panel'),canvas=root.querySelector('canvas'),ctx=canvas.getContext('2d'),stage=root.querySelector('.lf-stage'),controls=root.querySelector('.lf-controls'),catalog=root.querySelector('.lf-catalog'),dialog=root.querySelector('.lf-dialog');
+const initial=()=>({page:'studio',tab:'light',model:'bust',projection:'ortho',setup:'pair',selected:0,lights:[{name:'Principal',color:'#b0d7ff',power:2.93,softness:.27,direction:-96,height:30,shadow:true},{name:'Preench.',color:'#eb1456',power:.3,softness:.65,direction:35,height:15,shadow:false}],material:'Clay',formColor:'#e0ded7',background:'#3b4b6b',transparent:false,angle:-.24,tilt:0,zoom:1,focal:85,floor:true,guides:true,reference:false,collapsed:false,gray:false,poster:false,exposure:0,contrast:0});
+let s=initial(),scenes=[],frame=0,saveTimer=0,lastState='',lastFocus=null;const design={accent:'#dd2358',width:440};
+const icon=name=>'<i data-lucide="'+name+'" aria-hidden="true"></i>',status=text=>root.querySelector('.lf-feedback').textContent=text;
+function icons(){if(root.querySelector('i[data-lucide]')&&globalThis.lucide?.createIcons)lucide.createIcons({attrs:{width:16,height:16}})}
+function slider(key,label,value,min,max,step=1,unit='',digits=0){return '<label class="lf-row"><span>'+label+'</span><input type="range" data-key="'+key+'" aria-label="'+label+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+value+'" style="--fill:'+((value-min)/(max-min)*100)+'%" data-unit="'+unit+'" data-digits="'+digits+'"><output>'+value.toFixed(digits)+unit+'</output></label>'}
+function renderControls(){const l=s.lights[s.selected];
+if(s.tab==='light')controls.innerHTML='<div class="lf-setup"><label for="lf-setup">Esquema</label><select id="lf-setup" data-setting="setup">'+[['pair','Principal e preenchimento'],['side','Luz lateral'],['rim','Luz de recorte']].map(([v,label])=>'<option value="'+v+'" '+(s.setup===v?'selected':'')+'>'+label+'</option>').join('')+'</select><button data-action="add" aria-label="Adicionar luz">'+icon('plus')+'</button></div><div class="lf-chips">'+s.lights.map((x,i)=>'<div class="lf-chip '+(i===s.selected?'active':'')+'"><button data-light="'+i+'" aria-pressed="'+(i===s.selected)+'"><span class="lf-dot" style="background:'+x.color+'"></span>'+x.name+'</button><button data-remove="'+i+'" aria-label="Remover '+x.name+'" '+(s.lights.length===1?'disabled':'')+'>'+icon('x')+'</button></div>').join('')+'</div><div class="lf-colorrow"><label for="lf-light-color">Cor da luz</label><input id="lf-light-color" type="color" data-setting="lightColor" value="'+l.color+'"><label class="lf-check"><input type="checkbox" data-setting="shadow" '+(l.shadow?'checked':'')+'>Sombra</label></div>'+slider('power','Intensidade',l.power,0,8,.01,'',2)+slider('softness','Suavidade',l.softness,0,1,.01,'',2)+slider('direction','Giro',l.direction,-180,180,1,'°')+slider('height','Altura',l.height,-30,90,1,'°');
+else if(s.tab==='form')controls.innerHTML='<label class="lf-formrow"><span>Material</span><select data-setting="material">'+['Clay','Pele','Ouro','Normais'].map(x=>'<option '+(s.material===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label><div class="lf-colorrow"><label for="lf-form-color">Cor da forma</label><input id="lf-form-color" type="color" data-setting="formColor" value="'+s.formColor+'"><label class="lf-check"><input type="checkbox" data-setting="floor" '+(s.floor?'checked':'')+'>Chão</label></div>'+slider('angle','Girar',Math.round(s.angle*180/Math.PI),-180,180,1,'°')+slider('tilt','Inclinar',s.tilt,-45,45,1,'°')+'<div class="lf-colorrow"><label for="lf-bg">Fundo</label><input id="lf-bg" type="color" data-setting="background" value="'+s.background+'"><label class="lf-check"><input type="checkbox" data-setting="transparent" '+(s.transparent?'checked':'')+'>Transparente</label></div>';
+else controls.innerHTML=slider('focal','Lente',s.focal,10,300,1,' mm')+slider('zoom','Zoom',Math.round(s.zoom*100),65,150,1,'%')+'<div class="lf-viewpresets">'+[['front','Frente'],['three','3/4'],['side','Perfil'],['top','Topo']].map(([v,l])=>'<button data-view="'+v+'">'+l+'</button>').join('')+'</div>';icons()}
+function renderCatalog(){let title='',body='';if(s.page==='library'){title='Biblioteca de modelos';body=[['bust','Busto'],['head','Cabeça'],['torso','Torso']].map(([v,l])=>'<button class="lf-card" data-model="'+v+'"><span class="lf-placeholder">'+icon(v==='torso'?'person-standing':'scan-face')+'</span>'+l+'<small>Modelo ilustrativo</small></button>').join('')}else if(s.page==='packs'){title='Esquemas de iluminação';body=[['pair','Principal e preenchimento'],['side','Lateral'],['rim','Recorte']].map(([v,l])=>'<button class="lf-card" data-preset="'+v+'"><span class="lf-placeholder">'+icon('sun')+'</span>'+l+'<small>Aplicar à cena atual</small></button>').join('')}else{title='Suas cenas';body=scenes.map((x,i)=>'<button class="lf-card" data-scene="'+i+'"><img alt="Miniatura da cena '+(i+1)+'" src="'+x.thumbnail+'"><span>Cena '+(i+1)+'</span></button>').join('')}catalog.innerHTML='<h3>'+title+'</h3>'+(body?'<div class="lf-grid">'+body+'</div>':'<p class="lf-empty">Salve uma composição usando o marcador no topo.</p>');icons()}
+function render(){panel.classList.toggle('lf-collapsed',s.collapsed);panel.classList.toggle('lf-reference',s.reference);root.querySelectorAll('[data-page]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.page===s.page));root.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===s.tab));root.querySelectorAll('[data-projection]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.projection===s.projection));root.querySelector('.lf-model').value=s.model;root.querySelector('[data-action=collapse]').setAttribute('aria-expanded',!s.collapsed);root.querySelector('[data-action=collapse]').setAttribute('aria-label',s.collapsed?'Expandir controles':'Recolher controles');for(const k of ['floor','guides','reference'])root.querySelector('[data-action='+k+']').setAttribute('aria-pressed',s[k]);stage.hidden=s.page!=='studio';root.querySelector('.lf-tray').hidden=stage.hidden;catalog.hidden=!stage.hidden;root.querySelector('.lf-guide').hidden=!s.guides;renderControls();if(stage.hidden)renderCatalog();draw()}
+function state(){return {modelContent:{edicao:3,layout:'referencia-escolhida',aba:s.tab},privateContent:{page:s.page,tab:s.tab,projection:s.projection,collapsed:s.collapsed}}}
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{const next=state(),key=JSON.stringify(next);if(key===lastState)return;try{if(window.openai?.setWidgetState){lastState=key;Promise.resolve(window.openai.setWidgetState(next)).catch(()=>lastState='')}}catch{lastState=''}},180)}
+function load(value){if(value?.modelContent?.edicao!==3)return false;const before=JSON.stringify(state()),p=value.privateContent||{};if(['studio','library','packs','scenes'].includes(p.page))s.page=p.page;if(['form','light','lens'].includes(p.tab))s.tab=p.tab;if(['persp','ortho'].includes(p.projection))s.projection=p.projection;if(typeof p.collapsed==='boolean')s.collapsed=p.collapsed;lastState=JSON.stringify(state());return before!==lastState}
+function open(title,body){lastFocus=document.activeElement;root.querySelector('#lf-dialog-title').textContent=title;root.querySelector('.lf-dialogbody').innerHTML=body;dialog.hidden=false;icons();dialog.querySelector('[data-action=close]').focus()}
+function close(){dialog.hidden=true;lastFocus?.focus?.()}
+function preset(v){s.setup=v;s.selected=0;s.lights=initial().lights;if(v==='side'){s.lights[0].direction=-130;s.lights[1].power=.1}else if(v==='rim'){s.lights[0].direction=90;s.lights[0].power=4;s.lights[1].direction=-50;s.lights[1].color='#bbc8df';s.lights[1].power=.6}render()}
+root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+if(b.dataset.page){s.page=b.dataset.page;s.reference=false;render();save();return}if(b.dataset.tab){s.tab=b.dataset.tab;s.collapsed=false;render();save();return}if(b.dataset.projection){s.projection=b.dataset.projection;render();save();return}if(b.hasAttribute('data-light')){s.selected=+b.dataset.light;renderControls();draw();return}if(b.hasAttribute('data-remove')){if(s.lights.length>1){s.lights.splice(+b.dataset.remove,1);s.selected=Math.min(s.selected,s.lights.length-1);renderControls();draw()}return}if(b.dataset.model){s.model=b.dataset.model;s.page='studio';render();return}if(b.dataset.preset){s.page='studio';preset(b.dataset.preset);return}if(b.hasAttribute('data-scene')){s=JSON.parse(JSON.stringify(scenes[+b.dataset.scene].state));s.page='studio';render();status('Composição restaurada.');return}if(b.dataset.view){s.angle={front:0,three:-.5,side:-Math.PI/2,top:0}[b.dataset.view];s.tilt=b.dataset.view==='top'?-45:0;draw();return}if(b.dataset.export){status(b.dataset.export+' · exportação simulada.');close();return}
+const a=b.dataset.action;if(a==='close')close();else if(a==='collapse'){s.collapsed=!s.collapsed;render();save()}else if(['floor','guides','reference'].includes(a)){s[a]=!s[a];render()}else if(a==='camera'){s.angle=-.24;s.tilt=0;s.zoom=1;render()}else if(a==='reset'){s=initial();render();status('Cena inicial restaurada.')}else if(a==='add'){if(s.lights.length<4){s.lights.push({name:'Luz '+(s.lights.length+1),color:'#e4d4c5',power:1,softness:.3,direction:80,height:25,shadow:true});s.selected=s.lights.length-1;renderControls();draw()}else status('Esta prévia permite até quatro luzes.')}else if(a==='save'){if(scenes.length>=8){status('Limite da prévia: oito cenas.');return}if(stage.hidden){s.page='studio';render()}paint();scenes.push({state:JSON.parse(JSON.stringify(s)),thumbnail:canvas.toDataURL('image/jpeg',.55)});status('Cena '+scenes.length+' salva nesta prévia.')}else if(a==='download'){paint();const link=document.createElement('a');link.download='lightref-referencia.png';link.href=canvas.toDataURL('image/png');link.click();status('Imagem PNG gerada a partir desta prévia.')}else if(a==='photoshop')status('Simulação: referência enviada como nova camada.');else if(a==='import')open('Importar modelo','<p>Modelos próprios em .obj e .glb.</p><p>A importação será conectada no plugin. Nesta prévia, use os modelos da Biblioteca.</p>');else if(a==='help')open('Estude a iluminação','<p>1. Escolha o modelo no topo.</p><p>2. Arraste para enquadrar e use a roda para aproximar.</p><p>3. Selecione uma luz e ajuste cor, intensidade e posição.</p><p>4. Use “Jogar como camada” para enviar a referência.</p>');else if(a==='adjust')open('Ajustes de imagem',slider('exposure','Exposição',s.exposure,-2,2,.1,' EV',1)+slider('contrast','Contraste',s.contrast,0,100,1,'%')+'<label class="lf-check"><input type="checkbox" data-setting="gray" '+(s.gray?'checked':'')+'>Preto e branco</label><label class="lf-check"><input type="checkbox" data-setting="poster" '+(s.poster?'checked':'')+'>Posterizar · 4 valores</label>');else if(a==='export')open('Enviar ao Photoshop','<div class="lf-grid"><button data-export="Rasterizada">Camada rasterizada</button><button data-export="Com ajustes">Com camadas de ajuste</button></div>');
+});
+root.addEventListener('input',e=>{const el=e.target,l=s.lights[s.selected],key=el.dataset.key,k=el.dataset.setting;if(key){const v=+el.value;if(['power','softness','direction','height'].includes(key))l[key]=v;else s[key]=key==='angle'?v*Math.PI/180:key==='zoom'?v/100:v;el.style.setProperty('--fill',((v-Number(el.min))/(Number(el.max)-Number(el.min))*100)+'%');el.parentElement.querySelector('output').textContent=v.toFixed(+el.dataset.digits)+el.dataset.unit}else if(k==='lightColor'){l.color=el.value;root.querySelectorAll('.lf-chip .lf-dot')[s.selected].style.background=el.value}else if(k==='shadow')l.shadow=el.checked;else if(k==='setup'){preset(el.value);return}else if(k)s[k]=el.type==='checkbox'?el.checked:el.value;draw()});
+root.querySelector('.lf-model').addEventListener('change',e=>{s.model=e.target.value;draw()});root.addEventListener('keydown',e=>{if(dialog.hidden)return;if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,select')].filter(x=>!x.disabled),first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+const meshes={head:[],neck:[],base:[],torso:[]};
+function rings(target,rows,n=24,face=false){const vs=rows.map(([y,rx,rz])=>Array.from({length:n},(_,i)=>{const t=i/n*Math.PI*2;let x=Math.sin(t)*rx,z=Math.cos(t)*rz;if(face&&Math.cos(t)>.45){const front=Math.pow(Math.max(0,Math.cos(t)),4),nose=Math.exp(-Math.pow(x/.085,2)-Math.pow((y-.55)/.24,2))*.26,eye=Math.exp(-Math.pow((Math.abs(x)-.21)/.10,2)-Math.pow((y-.77)/.095,2))*.075,brow=Math.exp(-Math.pow((Math.abs(x)-.20)/.17,2)-Math.pow((y-.87)/.045,2))*.055,lips=Math.exp(-Math.pow(x/.18,4))*(Math.exp(-Math.pow((y-.30)/.035,2))*.037-Math.exp(-Math.pow((y-.35)/.025,2))*.029);z+=(nose-eye+brow+lips)*front}return[x,y,z]}));for(let i=0;i<vs.length-1;i++)for(let j=0;j<n;j++){const a=vs[i][j],b=vs[i][(j+1)%n],c=vs[i+1][j],d=vs[i+1][(j+1)%n];target.push([a,b,c],[b,d,c])}}
+rings(meshes.head,[[.03,.11,.24],[.09,.24,.29],[.18,.33,.33],[.27,.38,.35],[.32,.40,.36],[.36,.405,.36],[.42,.43,.37],[.53,.46,.405],[.65,.47,.42],[.75,.465,.41],[.84,.45,.39],[.92,.45,.40],[1.07,.445,.405],[1.22,.395,.36],[1.32,.28,.27],[1.36,.035,.05]],24,true);rings(meshes.neck,[[-.60,.285,.25],[-.40,.265,.24],[-.12,.205,.215],[.22,.20,.24]]);rings(meshes.base,[[-.92,.355,.32],[-.61,.355,.32],[-.59,.33,.30],[-.59,.001,.001]],32);rings(meshes.torso,[[-1.07,.72,.32],[-.92,.78,.35],[-.61,.69,.33],[-.39,.38,.26],[-.28,.23,.23]]);
+function rotate(p){const c=Math.cos(s.angle),t=Math.sin(s.angle),x=p[0]*c+p[2]*t,z=-p[0]*t+p[2]*c,a=s.tilt*Math.PI/180;return[x,p[1]*Math.cos(a)-z*Math.sin(a),p[1]*Math.sin(a)+z*Math.cos(a)]}
+function draw(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;if(root.isConnected&&!stage.hidden)paint()})}
+function paint(){const r=canvas.getBoundingClientRect();if(!ctx||r.width<1||r.height<1)return;const d=Math.min(devicePixelRatio||1,1.5),pw=Math.round(r.width*d),ph=Math.round(r.height*d);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,r.width,r.height);const w=r.width,h=r.height;if(!s.transparent){ctx.fillStyle=s.background;ctx.fillRect(0,0,w,h)}const scale=Math.min(w*.34,(h-48)/2.7)*s.zoom*(s.projection==='persp'?Math.sqrt(s.focal/85):1),cy=h*.54;const project=p=>{const f=s.projection==='persp'?3.8/(3.8-p[2]):1;return[w*.51+p[0]*scale*f,cy-p[1]*scale*f]};if(s.floor&&s.lights.some(l=>l.shadow)){const soft=s.lights[s.selected].softness;ctx.save();ctx.fillStyle='rgba(14,23,41,'+(.45-soft*.13)+')';ctx.filter='blur('+(soft*7)+'px)';ctx.beginPath();ctx.ellipse(w*.51-scale*.31,cy+scale*.92,scale*.73,scale*.12,-.08,0,Math.PI*2);ctx.fill();ctx.restore()}
+const mesh=s.model==='head'?meshes.head:[...meshes.head,...meshes.neck,...(s.model==='torso'?meshes.torso:meshes.base)],tris=mesh.map(tr=>{const v=tr.map(rotate);return{v,z:v.reduce((a,b)=>a+b[2],0)/3}}).sort((a,b)=>a.z-b.z),base={Clay:s.formColor.match(/\w\w/g).map(x=>parseInt(x,16)),Pele:[201,153,124],Ouro:[200,158,76],Normais:[190,190,190]}[s.material],lights=s.lights.map(l=>{const az=(l.direction+60)*Math.PI/180,el=l.height*Math.PI/180;return{dir:[Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el)],color:l.color.match(/\w\w/g).map(x=>.55+parseInt(x,16)/255*.45),power:l.power/3,soft:l.softness}});
+for(const{v}of tris){const a=v[1].map((x,i)=>x-v[0][i]),b=v[2].map((x,i)=>x-v[0][i]);let n=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],len=Math.hypot(...n)||1;n=n.map(x=>x/len);if(n[2]<=0)continue;let rgb=base.map(x=>x*.26);for(const l of lights){const dot=n.reduce((sum,x,i)=>sum+x*l.dir[i],0),brightness=Math.max(0,(dot+l.soft*.22)/(1+l.soft*.22))*l.power;rgb=rgb.map((x,i)=>x+base[i]*brightness*l.color[i])}if(s.material==='Normais')rgb=n.map(x=>(x+1)*115);rgb=rgb.map(x=>Math.max(20,Math.min(245,((x-110)*(1+s.contrast/120)+110)*Math.pow(2,s.exposure))));if(s.gray){const g=rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;rgb=[g,g,g]}if(s.poster)rgb=rgb.map(x=>Math.round(x/64)*64);ctx.fillStyle='rgb('+rgb.map(Math.round).join(',')+')';ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=.45;ctx.beginPath();v.map(project).forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fill();ctx.stroke()}}
+let drag=null;canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,angle:s.angle,tilt:s.tilt};canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;s.angle=drag.angle+(e.clientX-drag.x)*.011;s.tilt=Math.max(-45,Math.min(45,drag.tilt+(e.clientY-drag.y)*.2));draw()});for(const name of ['pointerup','pointercancel'])canvas.addEventListener(name,()=>drag=null);canvas.addEventListener('wheel',e=>{e.preventDefault();s.zoom=Math.max(.65,Math.min(1.5,s.zoom-e.deltaY*.001));draw()},{passive:false});const observer=new ResizeObserver(draw);observer.observe(stage);try{load(window.openai?.widgetState)}catch{}render();const receive=e=>{if(load(e.detail?.globals?.widgetState))render()};window.addEventListener('openai:set_globals',receive);let tweak;try{if(globalThis.Tweak){tweak=new Tweak({container:panel,onChange:()=>{root.style.setProperty('--lf-accent',design.accent);root.style.setProperty('--lf-panelwidth',design.width+'px')}});tweak.addColorPicker(design,'accent',{label:'Destaque',reference:'--lf-accent'});tweak.addSlider(design,'width',{label:'Largura do painel',min:300,max:740,step:10,unit:'px'})}}catch{}window.addEventListener('pagehide',()=>{observer.disconnect();clearTimeout(saveTimer);cancelAnimationFrame(frame);window.removeEventListener('openai:set_globals',receive);tweak?.dispose?.()},{once:true});
+})();
+</script>
+
+<script src="https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js"></script>
+<script src="https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js"></script>
+<script>
+(() => {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set(["top", "right", "bottom", "left"]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (event) => {
+    for (const target of event.composedPath()) {
+      if (target?.nodeType === Node.ELEMENT_NODE) {
+        const trigger = target.closest("[data-tooltip]");
+        if (trigger) return trigger;
+      }
+    }
+    return null;
+  };
+  const containsTarget = (trigger, target) =>
+    target?.nodeType != null && trigger.contains(target);
+  const getContent = (trigger) =>
+    trigger.getAttribute("data-tooltip")?.trim() ?? "";
+  const getPlacement = (trigger) => {
+    const placement = trigger.getAttribute("data-tooltip-placement");
+    return tooltipPlacements.has(placement) ? placement : "top";
+  };
+  const getTooltip = () => {
+    if (tooltip == null) {
+      tooltip = document.createElement("div");
+      tooltip.id = tooltipId;
+      tooltip.className = "tooltip";
+      tooltip.setAttribute("role", "tooltip");
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) => {
+    const ids = new Set(
+      (trigger.getAttribute("aria-describedby") ?? "")
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute("aria-describedby");
+    } else {
+      trigger.setAttribute("aria-describedby", [...ids].join(" "));
+    }
+  };
+  const clearOpenTimeout = () => {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) => {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) => {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              "--tooltip-available-width",
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              "--tooltip-available-height",
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: "fixed",
+    })
+      .then(({ x, y }) => {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = "visible";
+      })
+      .catch(() => {
+        if (activeTrigger === trigger && request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) => {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = "hidden";
+    floating.style.transform = "translate(0, 0)";
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () => {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) => {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() < skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() => {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) => {
+    if (event.pointerType === "touch") {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) => {
+    lastPointerWasTouch =
+      event.type === "pointerdown" && event.pointerType === "touch";
+  };
+  const handleTouchClick = (event) => {
+    const isTouch = event.pointerType === "touch" || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch && activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() => {
+      if (activeTrigger === trigger && !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) => {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) => {
+    const trigger = getTrigger(event);
+    if (trigger?.matches(":focus-visible")) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) => {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handlers = {
+    pointerover: handlePointerOpen,
+    pointerdown: handlePointer,
+    pointercancel: handlePointer,
+    click: handleTouchClick,
+    pointerout: handleLeave,
+    focusin: handleFocusIn,
+    focusout: handleLeave,
+    keydown: handleKeyDown,
+    contextmenu: handleContextMenu,
+  };
+  const roots = new Map();
+  const handledEvents = new WeakSet();
+  const handleEvent = (event) => {
+    if (handledEvents.has(event)) return;
+    handledEvents.add(event);
+    handlers[event.type](event);
+  };
+  const discoverRoots = (node) => {
+    if (node.shadowRoot) listen(node.shadowRoot);
+    for (const element of node.querySelectorAll("*")) {
+      if (element.shadowRoot) listen(element.shadowRoot);
+    }
+  };
+  const listen = (root) => {
+    if (roots.has(root)) return;
+    for (const type of Object.keys(handlers)) root.addEventListener(type, handleEvent);
+    const observer = new window.MutationObserver((records) => {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) discoverRoots(node);
+        }
+      }
+      for (const [root, cleanup] of roots) {
+        if (root.host && !root.host.isConnected) {
+          cleanup();
+          roots.delete(root);
+        }
+      }
+      if (activeTrigger && !activeTrigger.isConnected) closeTooltip(false);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    roots.set(root, () => {
+      observer.disconnect();
+      for (const type of Object.keys(handlers)) root.removeEventListener(type, handleEvent);
+    });
+    discoverRoots(root);
+  };
+  const destroy = () => {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    for (const cleanup of roots.values()) cleanup();
+    roots.clear();
+    tooltip = null;
+  };
+
+  // Events between children of one shadow root never reach the document.
+  listen(document);
+  window.addEventListener("pagehide", destroy, { once: true });
+})();
+</script>
+<script id="codex-visualization-tabs">
+(() => {
+  const selector = '.nav[role="tablist"] [role="tab"]';
+  const disabled = ':disabled,[aria-disabled="true"]';
+  const selectTab = (selected) => {
+    const panelId = selected.getAttribute("aria-controls");
+    for (const tab of selected.closest('[role="tablist"]').querySelectorAll('[role="tab"]')) {
+      const active = tab === selected;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", String(active));
+      const id = tab.getAttribute("aria-controls");
+      const panel = id && document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden && selected.id) {
+          panel.setAttribute("aria-labelledby", selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) => {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === "click") {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest('[role="tablist"]').querySelectorAll('[role="tab"]'),
+    ).filter((candidate) => !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === "Home") {
+      next = 0;
+    } else if (event.key === "End") {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll('.nav[role="tablist"]')) {
+    const selected =
+      list.querySelector('[role="tab"][aria-selected="true"]') ??
+      list.querySelector('[role="tab"].active') ??
+      list.querySelector('[role="tab"]');
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener("click", interact);
+  document.addEventListener("keydown", interact);
+  window.addEventListener("pagehide", () => {
+    document.removeEventListener("click", interact);
+    document.removeEventListener("keydown", interact);
+  }, { once: true });
+})();
+</script>
+<script id="codex-visualization-lucide" async src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js"></script>
+<script>
+(() => {
+  const initialize = () => {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById("codex-visualization-lucide")
+    ?.addEventListener("load", initialize, { once: true });
+})();
+</script>
+
+</body>
+</html>

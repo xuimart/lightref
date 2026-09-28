@@ -1,0 +1,7 @@
+{
+  "name": "com.lightref.cep",
+  "version": "0.1.0",
+  "description": "LightRef - referencia de iluminacao 3D para Photoshop (Xuimart)",
+  "type": "commonjs",
+  "private": true
+}

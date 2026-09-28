@@ -1,0 +1,145 @@
+/* LightRef v0.4 - UI estilo FormBox (layout adaptado do mockup aprovado). ASCII-only. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; margin: 0; background: #1e1e1e; overflow: hidden; }
+body { display: flex; }
+#lightref { width: 100%; height: 100vh; display: flex; }
+#lightref .lf-panel { width: 100% !important; height: 100%; margin: 0 !important; border-radius: 0 !important; display: flex; flex-direction: column; }
+#lightref .lf-stage { flex: 1 1 auto; }
+#lightref .lf-tray { flex: 0 0 auto; }
+#lightref{--lf-accent:#de2246;--lf-panelwidth:440px;font:14px/1.4 'Segoe UI',sans-serif;color:#dbdbdb;color-scheme:dark;width:100%}#lightref *{box-sizing:border-box}#lightref button,#lightref select,#lightref input{font:inherit}#lightref button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:5px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#dbdbdb}#lightref button:hover{background:#393939}#lightref button:focus-visible,#lightref input:focus-visible,#lightref select:focus-visible{outline:2px solid var(--lf-accent);outline-offset:2px}#lightref button:disabled{opacity:.4}#lightref svg{width:17px;height:17px;flex-shrink:0}#lightref .lf-panel{width:var(--lf-panelwidth);max-width:100%;margin:auto;background:#232323;border:1px solid #373737;border-radius:5px;position:relative;overflow:hidden;container-type:inline-size}#lightref .lf-mainnav{display:flex;gap:9px;padding:10px 10px 8px}#lightref .lf-mainnav button{color:#a6a6a6;border-radius:24px;padding:5px 12px;font-size:14px;min-height:35px}#lightref .lf-mainnav button[aria-pressed=true]{color:#dbdbdb;background:#2e2e2e}#lightref .lf-topbar{display:flex;align-items:center;gap:7px;padding:0 10px 10px}#lightref select{color:#dbdbdb;background:#2d2d2d;border:1px solid transparent;border-radius:8px;height:34px;padding:4px 9px;min-width:0;font-size:13px}#lightref .lf-model{flex:1;min-width:78px}#lightref .lf-projection{display:flex;background:#2b2b2b;border-radius:8px;padding:2px}#lightref .lf-projection button{min-height:29px;padding:3px 8px;color:#a6a6a6;border-radius:6px;font-size:12px}#lightref .lf-projection button[aria-pressed=true]{background:#414141;color:#e4e4e4}#lightref .lf-filetools,#lightref .lf-traytools{display:flex;gap:5px}#lightref .lf-filetools button,#lightref .lf-traytools button{background:#2c2c2c;width:32px;height:34px;padding:6px;color:#a5a5a5}#lightref .lf-stage{position:relative;margin:0 3px;background:#3b4b6b;aspect-ratio:1.18;min-height:268px;max-height:580px;overflow:hidden}#lightref canvas{width:100%;height:100%;position:absolute;inset:0;touch-action:none;cursor:grab}#lightref canvas:active{cursor:grabbing}#lightref .lf-viewtools{display:flex;gap:5px;position:absolute;left:8px;top:9px}#lightref .lf-viewtools button,#lightref .lf-help{width:28px;height:28px;min-height:28px;padding:5px;background:#23262d;border:1px solid #3d4452;border-radius:6px;color:#b9bec8}#lightref .lf-viewtools button[aria-pressed=true][data-action=guides],#lightref .lf-viewtools button[aria-pressed=true][data-action=reference]{color:var(--lf-accent);border-color:var(--lf-accent)}#lightref .lf-help{position:absolute;right:8px;top:9px}#lightref .lf-guide{pointer-events:none;position:absolute;left:18%;top:38%;width:9px;height:9px;border:1px solid #cfdbed66;border-radius:50%}#lightref .lf-traybar{display:flex;align-items:center;padding:10px 10px 7px;gap:5px}#lightref .lf-collapse{padding:4px;width:24px;color:#a6a6a6}#lightref .lf-tabs{display:flex;gap:4px;flex:1}#lightref .lf-tabs button{padding:5px 10px;color:#a6a6a6;border-radius:24px;font-size:14px}#lightref .lf-tabs button[aria-pressed=true]{background:#2e2e2e;color:#e1e1e1}#lightref .lf-controls{padding:6px 12px 13px}#lightref .lf-setup{display:grid;grid-template-columns:92px minmax(0,1fr) 32px;gap:8px;align-items:center;margin-bottom:9px;font-size:13px;color:#a6a6a6}#lightref .lf-setup button{background:#2e2e2e;padding:3px;height:34px}#lightref .lf-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}#lightref .lf-chip{display:flex;align-items:center;border-radius:22px;background:#2d2d2d;padding:1px 4px 1px 2px}#lightref .lf-chip.active{background:#434343}#lightref .lf-chip button{font-size:12px;min-height:29px;border-radius:20px;padding:4px 7px}#lightref .lf-chip button[data-remove]{padding:3px;width:21px;color:#878787}#lightref .lf-chip svg{width:12px;height:12px}#lightref .lf-dot{width:10px;height:10px;border-radius:50%;display:block;flex-shrink:0}#lightref .lf-colorrow{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:9px;min-height:43px;font-size:13px;color:#a6a6a6}#lightref input[type=color]{border:3px solid #333638;border-radius:8px;width:35px;height:35px;padding:0;background:transparent}#lightref input[type=color]::-webkit-color-swatch-wrapper{padding:0}#lightref input[type=color]::-webkit-color-swatch{border:0;border-radius:5px}#lightref .lf-check{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;color:#a6a6a6}#lightref input[type=checkbox]{accent-color:#dcdcdc;width:14px;height:14px;margin:0}#lightref .lf-row{display:grid;grid-template-columns:92px minmax(0,1fr) 44px;gap:8px;align-items:center;min-height:38px;font-size:13px;color:#a6a6a6}#lightref input[type=range]{--fill:50%;appearance:none;background:linear-gradient(to right,#cbcbcb 0 var(--fill),#494949 var(--fill) 100%);height:4px;border-radius:5px;width:100%;margin:0;min-width:0}#lightref input[type=range]::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border-radius:50%;background:#eeeeee;border:1px solid #d1d1d1;box-shadow:0 1px 4px #161616}#lightref input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#eeeeee;border:1px solid #d1d1d1}#lightref output{font-size:12px;text-align:right;color:#a6a6a6;font-variant-numeric:tabular-nums}#lightref .lf-formrow{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:8px;min-height:42px;font-size:13px;color:#a6a6a6}#lightref .lf-viewpresets{display:flex;gap:5px;margin-top:11px;flex-wrap:wrap}#lightref .lf-viewpresets button{flex:1;font-size:12px;background:#303030}#lightref .lf-exportbar{display:flex;gap:2px;padding:10px 12px 5px;border-top:1px solid #333333}#lightref .lf-exportbar button{background:var(--lf-accent);color:#f7eef1;min-height:36px;font-size:13px}#lightref .lf-exportbar button:first-child{flex:1;font-weight:500}#lightref .lf-exportbar button:last-child{width:32px;padding:5px}#lightref .lf-feedback{padding:4px 10px 9px;text-align:center;color:#999999;font-size:11px;min-height:28px}#lightref .lf-dialog{position:absolute;inset:0;z-index:20;background:#17171788;display:flex;align-items:flex-start;justify-content:center;padding:85px 12px 20px}#lightref .lf-dialogcard{width:100%;max-width:375px;background:#2b2b2b;border:1px solid #4a4a4a;border-radius:10px;padding:12px;box-shadow:0 12px 35px #17171788}#lightref .lf-dialogcard header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;font-size:14px}#lightref .lf-dialogcard strong{font-weight:500}#lightref .lf-dialogcard p{font-size:13px;line-height:1.6;color:#bdbdbd;margin:8px 0}#lightref .lf-dialogcard .lf-row{grid-template-columns:80px minmax(0,1fr) 37px;gap:6px}#lightref .lf-dialogcard .lf-check{margin:10px 0}#lightref .lf-dialogcard button:not(header button){background:#393939;font-size:12px;min-height:34px}#lightref .lf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}#lightref .lf-catalog{padding:12px;min-height:460px}#lightref .lf-catalog h3{font-size:14px;font-weight:500;margin:0 0 15px}#lightref .lf-card{display:flex;flex-direction:column;align-items:stretch!important;background:#2d2d2d!important;border:1px solid #414141!important;padding:9px!important;text-align:left;font-size:13px!important;gap:10px!important}#lightref .lf-card img{width:100%;height:112px;object-fit:cover;background:#3b4b6b;border-radius:5px}#lightref .lf-placeholder{display:grid;place-items:center;background:#3a465d;border-radius:5px;height:95px;color:#c2c7ce}#lightref .lf-placeholder svg{width:35px;height:35px}#lightref .lf-card small{font-size:11px;color:#aaa}#lightref .lf-empty{font-size:13px;color:#b1b1b1;padding:25px 5px}#lightref .lf-collapsed .lf-controls{display:none}#lightref .lf-collapsed .lf-collapse svg{transform:rotate(180deg)}#lightref .lf-reference .lf-tray,#lightref .lf-reference .lf-topbar,#lightref .lf-reference .lf-guide{display:none}#lightref .lf-reference .lf-stage{aspect-ratio:auto;height:545px;max-height:none}#lightref [hidden]{display:none!important}
+@container(max-width:365px){#lightref .lf-topbar{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:6px}#lightref .lf-filetools{grid-column:1/-1;justify-content:flex-end}#lightref .lf-mainnav{gap:3px;padding-left:7px;padding-right:7px}#lightref .lf-mainnav button{font-size:13px;padding:4px 9px}#lightref .lf-row{grid-template-columns:77px minmax(0,1fr) 40px;gap:7px;font-size:12px}#lightref .lf-setup,#lightref .lf-colorrow{grid-template-columns:77px minmax(0,1fr) auto;gap:7px;font-size:12px}#lightref .lf-tabs{gap:0}#lightref .lf-tabs button{padding:4px 8px;font-size:13px}#lightref .lf-traybar{padding-left:7px;padding-right:7px;gap:2px}#lightref .lf-traytools{gap:3px}#lightref .lf-traytools button{width:28px}#lightref .lf-formrow{grid-template-columns:77px minmax(0,1fr);font-size:12px}}
+#lightref .lf-stage{width:calc(100% - 6px);min-width:0}
+@container (min-width:321px) and (max-width:365px){#lightref .lf-topbar{display:flex;gap:5px}#lightref .lf-filetools{gap:3px}#lightref .lf-filetools button{width:27px;padding:4px}#lightref .lf-projection button{padding:3px 6px}}
+/* Visual refinement only: the layout and existing interaction code are retained. */
+#lightref .lf-panel{background:#242528;border-color:#3b3c40;border-radius:10px}
+#lightref .lf-mainnav{gap:6px;padding-top:12px;padding-bottom:12px}
+#lightref .lf-mainnav button{font-size:13px;color:#aaadb5;min-height:33px}
+#lightref .lf-mainnav button[aria-pressed=true]{background:#393039;color:#f3bacb}
+#lightref .lf-topbar{padding-bottom:12px}
+#lightref select{background:#303136;border-color:#3e4046;border-radius:6px;color:#e1e2e6}
+#lightref .lf-projection{background:#202125;border:1px solid #3b3c41;border-radius:7px}
+#lightref .lf-projection button[aria-pressed=true]{background:#42444b;color:#e9e9ec}
+#lightref .lf-filetools{border-left:1px solid #44454b;padding-left:6px;gap:3px}
+#lightref .lf-filetools button{background:transparent;color:#b5b7c0;border-radius:6px;width:30px}
+#lightref .lf-filetools button:hover{background:#3a3b41}
+#lightref .lf-viewtools{background:#252932;border:1px solid #565f7170;border-radius:7px;padding:2px;gap:2px}
+#lightref .lf-viewtools button{border-color:transparent;background:transparent;border-radius:4px}
+#lightref .lf-viewtools button[aria-pressed=true][data-action=guides]{background:#3c2c3c;border-color:#dd235877}
+#lightref .lf-help{background:#252932;border-color:#565f7170}
+#lightref .lf-traybar{padding-top:9px;padding-bottom:0;border-bottom:1px solid #3a3c42;gap:5px}
+#lightref .lf-tabs{gap:3px;align-self:stretch}
+#lightref .lf-tabs button{border-radius:0;min-height:43px;padding:7px 10px;color:#aeb0b8;font-size:13px;border-bottom:2px solid transparent}
+#lightref .lf-tabs button[aria-pressed=true]{background:transparent;color:#ececef;border-bottom-color:var(--lf-accent)}
+#lightref .lf-traytools{padding-bottom:7px}
+#lightref .lf-traytools button{background:#303136;color:#b9bbc4;border:1px solid #3c3e44;border-radius:6px}
+#lightref .lf-collapse{color:#b3b5bd;margin-bottom:7px}
+#lightref .lf-controls{padding-top:13px;padding-bottom:15px}
+#lightref .lf-setup{margin-bottom:10px;color:#b5b7bf}
+#lightref .lf-setup button{background:#303136;border:1px solid #3e4046;border-radius:6px}
+#lightref .lf-chips{gap:7px;margin-bottom:15px}
+#lightref .lf-chip{background:#2d2e33;border:1px solid #45464e;border-radius:7px;padding:0 3px 0 1px}
+#lightref .lf-chip.active{background:#3d303a;border-color:var(--lf-accent)}
+#lightref .lf-chip button{border-radius:5px;color:#ced0d8}
+#lightref .lf-chip.active button[data-light]{color:#f1dce3}
+#lightref .lf-chip button[data-remove]{color:#a4a1aa}
+#lightref .lf-colorrow{margin-bottom:12px;color:#b5b7bf}
+#lightref input[type=color]{border-color:#4a4d55;border-radius:7px}
+#lightref .lf-check{color:#b5b7bf}
+#lightref .lf-row{grid-template-columns:92px minmax(0,1fr) 54px;min-height:39px;color:#b5b7bf}
+#lightref output{background:#303137;border:1px solid #3d3f46;border-radius:5px;min-height:25px;display:flex;align-items:center;justify-content:center;color:#d8dae2;padding:2px 3px;font-size:11px}
+#lightref input[type=range]{background:linear-gradient(to right,#d1d2d8 0 var(--fill),#484a52 var(--fill) 100%)}
+#lightref input[type=range]::-webkit-slider-thumb{width:14px;height:14px;background:#e8e9ee;border-color:#cdd0da}
+#lightref .lf-formrow{color:#b5b7bf}
+#lightref .lf-exportbar{border-color:#3a3c42;padding-top:11px}
+#lightref .lf-exportbar button{background:#b92e53;border-radius:6px}
+#lightref .lf-exportbar button:hover{background:#d03661}
+#lightref .lf-feedback{color:#a6a8b0}
+#lightref .lf-dialogcard{background:#2b2d32;border-color:#4a4c55}
+#lightref .lf-dialogcard .lf-row{grid-template-columns:80px minmax(0,1fr) 48px}
+@container(max-width:365px){
+ #lightref .lf-mainnav{gap:3px}
+ #lightref .lf-mainnav button{padding-left:8px;padding-right:8px}
+ #lightref .lf-filetools{padding-left:4px;gap:2px}
+ #lightref .lf-filetools button{width:25px}
+ #lightref .lf-row{grid-template-columns:77px minmax(0,1fr) 49px;gap:7px}
+ #lightref .lf-tabs{gap:0}
+ #lightref .lf-tabs button{padding-left:8px;padding-right:8px}
+ #lightref .lf-traybar{gap:2px}
+}
+/* 01 — Vertical: próximo da referência, com controles em uma coluna. */
+#lightref{--lf-panelwidth:440px}
+#lightref .lf-panel{border-radius:8px}
+#lightref .lf-mainnav button[aria-pressed=true]{background:#343039;color:#efced8}
+#lightref .lf-traybar{border-bottom:1px solid #35363c}
+#lightref .lf-tabs button[aria-pressed=true]{border-radius:18px;background:#38343c;color:#f0dfe6;border-bottom-color:transparent}
+#lightref .lf-tabs button{min-height:33px;margin-bottom:7px}
+#lightref .lf-stage{aspect-ratio:1.18}
+#lightref .lf-row{min-height:40px}
+
+/* Botao PS na tray (acao principal) */
+#lightref .lf-ps-btn{background:#b92e53 !important;border-color:transparent !important;color:#fff !important}
+#lightref .lf-ps-btn:hover{background:#d03661 !important}
+
+/* Secao posicao do modelo + mini botao */
+#lightref .lf-section-label{font-size:12px;color:#c2c4cc;font-weight:500;margin:14px 0 8px;padding-top:10px;border-top:1px solid #3a3c42}
+#lightref .lf-section-label small{color:#888;font-weight:400}
+#lightref .lf-mini-btn{width:100%;margin-top:6px;background:#303136;border:1px solid #3e4046;border-radius:6px;color:#dfe0e6;min-height:32px;font-size:12px;cursor:pointer}
+#lightref .lf-mini-btn:hover{border-color:var(--lf-accent);color:#fff}
+
+/* Fundo xadrez quando transparente */
+#lightref #lf-checker{position:absolute;inset:0;display:none;z-index:0;background-color:#3a3a3a;background-image:linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+#lightref .lf-stage.transparent #lf-checker{display:block}
+#lightref #gl-canvas{position:relative;z-index:1}
+
+/* Ordem de camadas do stage: checker(0) < canvas(1) < ferramentas(2) */
+#lightref .lf-viewtools, #lightref .lf-help { z-index: 2; }
+#lightref .lf-stage { position: relative; }
+
+/* Scroll na biblioteca/cenas */
+#lightref .lf-catalog{min-height:0 !important;flex:1 1 auto;overflow-y:auto;max-height:none}
+#lightref .lf-catalog::-webkit-scrollbar{width:8px}
+#lightref .lf-catalog::-webkit-scrollbar-thumb{background:#4a4a54;border-radius:4px}
+#lightref .lf-panel{min-height:0}
+#lightref .lf-catalog{min-height:0}
+
+
+/* ===================== IDENTIDADE XUIMART + BOTOES QUADRADOS ===================== */
+/* Botoes: quadrados com cantos arredondados (6px), nunca redondos. */
+#lightref button { border-radius: 6px !important; }
+#lightref .lf-mainnav button { border-radius: 6px !important; }
+#lightref .lf-tabs button { border-radius: 6px 6px 0 0 !important; }
+#lightref .lf-projection button { border-radius: 5px !important; }
+#lightref .lf-chip { border-radius: 7px !important; }
+#lightref .lf-chip button { border-radius: 5px !important; }
+/* O que DEVE continuar redondo: bolinha de cor da luz e thumb do slider. */
+#lightref .lf-dot { border-radius: 50% !important; }
+#lightref input[type=range]::-webkit-slider-thumb { border-radius: 50% !important; }
+#lightref input[type=range]::-moz-range-thumb { border-radius: 50% !important; }
+
+/* Accent Xuimart nos estados ativos. */
+#lightref .lf-mainnav button[aria-pressed=true]{ background:#3a1620; color:#f3bacb; }
+#lightref .lf-tabs button[aria-pressed=true]{ color:#f0dfe6; border-bottom:2px solid var(--lf-accent); background:transparent; }
+#lightref .lf-projection button[aria-pressed=true]{ background:var(--lf-accent); color:#fff; }
+#lightref .lf-chip.active{ border-color:var(--lf-accent); background:#3a1620; }
+
+/* Ferramentas com borda sutil e hover accent (padrao Xuimart). */
+#lightref .lf-viewtools button:hover, #lightref .lf-help:hover, #lightref .lf-filetools button:hover, #lightref .lf-traytools button:hover { border-color: var(--lf-accent); color:#fff; }
+#lightref .lf-viewtools button[aria-pressed=true]{ border-color:var(--lf-accent); color:var(--lf-accent); }
+
+/* Botao de export (PS) - accent solido. */
+#lightref .lf-ps-btn{ background:var(--lf-accent) !important; border-color:transparent !important; color:#fff !important; }
+#lightref .lf-ps-btn:hover{ background:#a81834 !important; }
+
+/* Foco: contorno accent. */
+#lightref button:focus-visible, #lightref input:focus-visible, #lightref select:focus-visible { outline:2px solid var(--lf-accent); outline-offset:1px; }
+
+/* Banner de atualizacao (padrao Xuimart) */
+#lightref #lf-update-banner{position:absolute;left:10px;right:10px;bottom:34px;z-index:50;background:#26272b;border:1px solid var(--lf-accent);border-radius:8px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+#lightref #lf-update-banner .lf-upd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+#lightref #lf-update-banner strong{color:#fff;font-size:13px}
+#lightref #lf-update-banner .lf-upd-x{background:transparent;border:0;color:#9a9ba2;font-size:18px;line-height:1;cursor:pointer;padding:0 2px}
+#lightref #lf-update-banner .lf-upd-x:hover{color:#fff}
+#lightref #lf-update-banner .lf-upd-log{color:#c2c4cc;font-size:12px;margin-bottom:8px;max-height:80px;overflow:auto;white-space:pre-line}
+#lightref #lf-update-banner .lf-upd-dl{width:100%;min-height:32px;background:var(--lf-accent);border:0;border-radius:6px;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+#lightref #lf-update-banner .lf-upd-dl:hover{filter:brightness(1.08)}
+#lightref #status-msg{cursor:pointer}

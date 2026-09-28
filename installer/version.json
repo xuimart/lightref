@@ -1,0 +1,5 @@
+﻿{
+  "version": "0.4.0",
+  "downloadUrl": "https://github.com/xuimart/lightref/releases/latest/download/LightRef_Setup.exe",
+  "changelog": "Migracao para Babylon.js (subsurface + PBR), nova biblioteca de modelos, mapas de ambiente (HDR), aba Posicao com gizmo e export em 2K."
+}

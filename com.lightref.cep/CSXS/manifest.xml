@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Manifesto CEP do LightRef.
+  Pontos nao negociaveis (ver PADRAO_PLUGINS_XUIMART.md secao 4):
+   * enable-nodejs e mixed-context sao obrigatorios (require, child_process, fs)
+   * PHXS + PHSP cobrem as duas variantes de host do Photoshop
+  Especifico do LightRef:
+   * o painel roda WebGL (Three.js). O CEF do CEP suporta WebGL nativamente;
+     mantemos a janela maior por causa do viewport 3D.
+-->
+<ExtensionManifest Version="6.0"
+    ExtensionBundleId="com.lightref"
+    ExtensionBundleVersion="0.4.0"
+    ExtensionBundleName="LightRef">
+  <ExtensionList>
+    <Extension Id="com.lightref.panel" Version="0.4.0" />
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="PHXS" Version="[19.0,99.9]" />
+      <Host Name="PHSP" Version="[19.0,99.9]" />
+    </HostList>
+    <LocaleList><Locale Code="All" /></LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="8.0" />
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.lightref.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <ScriptPath>./init.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+            <Parameter>--ignore-gpu-blacklist</Parameter>
+            <Parameter>--enable-webgl</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle><AutoVisible>true</AutoVisible></Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>LightRef</Menu>
+          <Geometry>
+            <Size><Height>640</Height><Width>360</Width></Size>
+            <MinSize><Height>420</Height><Width>300</Width></MinSize>
+            <MaxSize><Height>1600</Height><Width>900</Width></MaxSize>
+          </Geometry>
+          <Icons>
+            <Icon Type="Normal">./icons/icon-normal.png</Icon>
+            <Icon Type="RollOver">./icons/icon-rollover.png</Icon>
+            <Icon Type="DarkNormal">./icons/icon-dark-normal.png</Icon>
+            <Icon Type="DarkRollOver">./icons/icon-dark-rollover.png</Icon>
+          </Icons>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

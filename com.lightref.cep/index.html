@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LightRef</title>
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+<div id="lightref">
+  <div class="lf-panel">
+    <!-- Navegacao principal -->
+    <nav class="lf-mainnav" aria-label="Navegacao">
+      <button data-page="studio" aria-pressed="true">3D</button>
+      <button data-page="library" aria-pressed="false">Biblioteca</button>
+      <button data-page="scenes" aria-pressed="false">Cenas</button>
+    </nav>
+
+    <!-- Topbar: modelo + projecao + ferramentas -->
+    <div class="lf-topbar">
+      <select class="lf-model" id="model-select" aria-label="Modelo"></select>
+      <div class="lf-projection" aria-label="Projecao">
+        <button data-projection="persp" aria-pressed="true">Persp</button>
+        <button data-projection="ortho" aria-pressed="false">Orto</button>
+      </div>
+      <div class="lf-filetools">
+        <button data-action="save" title="Salvar cena" aria-label="Salvar cena">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        </button>
+        <button data-action="import" title="Importar modelo" aria-label="Importar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg>
+        </button>
+        <button data-action="reset" title="Restaurar" aria-label="Restaurar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3"/><path d="M3 3v5h5"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stage (viewport 3D) -->
+    <div class="lf-stage">
+      <div id="lf-checker"></div>
+      <canvas id="gl-canvas" aria-label="Visor 3D. Arraste para girar."></canvas>
+      <div class="lf-viewtools">
+        <button data-action="camera" title="Resetar camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3"/><path d="M3 3v5h5"/></svg></button>
+        <button data-action="floor" aria-pressed="true" title="Chao/sombra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18h18"/><path d="M6 18l3-9 3 6 2-4 4 7"/></svg></button>
+        <button data-action="guides" aria-pressed="true" title="Guias de luz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+        <button data-action="reference" aria-pressed="false" title="Modo referencia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+      <button class="lf-help" data-action="help" title="Ajuda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></button>
+      <div id="loading-overlay" class="loading-overlay" style="display:none;"><div class="spinner"></div><div class="loading-text"><span>Carregando</span> <span id="loading-pct">0%</span></div></div>
+    </div>
+
+    <!-- Tray de propriedades: abas Forma/Luz/Lente + tools -->
+    <section class="lf-tray" aria-label="Propriedades">
+      <div class="lf-traybar">
+        <button class="lf-collapse" data-action="collapse" aria-expanded="true" title="Recolher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg></button>
+        <nav class="lf-tabs" aria-label="Controles">
+          <button data-tab="form" aria-pressed="true">Forma</button>
+          <button data-tab="light" aria-pressed="false">Luz</button>
+          <button data-tab="lens" aria-pressed="false">Lente</button>
+          <button data-tab="adjust" aria-pressed="false">Ajustes</button>
+          <button data-tab="pos" aria-pressed="false">Posicao</button>
+        </nav>
+        <div class="lf-traytools">
+          <button data-action="photoshop-menu" title="Jogar no Photoshop" class="lf-ps-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
+        </div>
+      </div>
+      <div class="lf-controls" id="lf-controls"></div>
+    </section>
+
+    <!-- Pagina Biblioteca/Cenas (catalogo) -->
+    <section class="lf-catalog" id="lf-catalog" aria-label="Catalogo" hidden></section>
+
+    <div class="lf-feedback" id="status-msg" aria-live="polite">LightRef v0.4</div>
+
+    <!-- Dialogo (ajustes / onboarding) -->
+    <div class="lf-dialog" id="lf-dialog" role="dialog" aria-modal="true" hidden>
+      <div class="lf-dialogcard">
+        <header><strong id="lf-dialog-title"></strong><button data-action="close" title="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+        <div class="lf-dialogbody" id="lf-dialog-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".obj,.glb,.gltf,.stl" style="display:none;">
+
+<script src="js/vendor/babylon.js"></script>
+<script src="js/vendor/babylonjs.loaders.min.js"></script>
+<script src="js/CSInterface.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/lights.js"></script>
+<script src="js/postfx.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/to-photoshop.js"></script>
+<script src="js/update.js"></script>
+<script src="js/panel.js"></script>
+</body>
+</html>

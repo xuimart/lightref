@@ -1,0 +1,23 @@
+﻿# Originais e material de trabalho (nao versionar)
+Modelos 3d/
+hdr/
+modelo posavel/
+_backup_v0.3_pre-formbox-ui/
+__pycache__/
+*.pyc
+
+# Artefatos de build do instalador
+installer/_staging/
+installer/plugin.zip
+installer/*.exe
+
+# Modelos gigantes fora do plugin (>100MB quebram o GitHub)
+com.lightref.cep/models/redimensionados/
+
+# Sistema
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# temporarios de trabalho
+_*.txt
