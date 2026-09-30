@@ -15,10 +15,13 @@ const { loadStorage } = require('./loadStorage');
 
 const pageArb = fc.constantFrom('library', 'scenes');
 // Nomes de categoria variados (inclui chaves especiais e espacos).
+// Chaves inseguras (__proto__/constructor/prototype) sao rejeitadas de proposito
+// por setDrawerState (anti prototype-pollution), entao as excluimos do gerador.
+function safeKey(k) { return k !== '__proto__' && k !== 'constructor' && k !== 'prototype'; }
 const catArb = fc.oneof(
   fc.constantFrom('Cabecas', 'Bustos e Torsos', 'Formas basicas', '__outros__', '__sem__'),
   fc.string({ minLength: 1, maxLength: 12 })
-);
+).filter(safeKey);
 const opArb = fc.record({
   page: pageArb,
   cat: catArb,

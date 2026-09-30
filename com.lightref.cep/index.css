@@ -128,3 +128,8 @@ body { display: flex; }
 #lr04 .lr04-card-del{position:absolute;top:4px;right:4px;z-index:2;width:18px;height:18px;line-height:16px;text-align:center;border-radius:50%;background:rgba(20,22,26,.85);color:#e1e2e6;font-size:12px;cursor:pointer;border:1px solid #414953}
 #lr04 .lr04-card-del:hover{background:#b23b3b;border-color:#b23b3b;color:#fff}
 #lr04 .lr04-emptyhint{color:var(--lr-muted);font-size:12px;padding:8px 2px}
+
+/* Arrastar-e-soltar (HTML5): estados visuais de arraste e alvo. Req 6.1/6.2, 12.1/12.2. */
+#lr04 .lr04-card.lr04-dragging{opacity:.5;outline:1px dashed #6f7681;outline-offset:-2px}
+#lr04 .lr04-drawer.lr04-dropok{border-color:var(--lr-accent,#5b8def);box-shadow:0 0 0 1px var(--lr-accent,#5b8def) inset}
+#lr04 .lr04-drawer.lr04-dropok .lr04-drawerhead{background:#2a3340}

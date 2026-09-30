@@ -898,6 +898,10 @@
     // card "+" de uma gaveta; consumida por onFilePicked). Req 3.5.
     var pendingImportCat = null;
 
+    // Estado do arraste atual (DnD HTML5). Guardado no dragstart do card e lido no
+    // drop/dragend. Req 6.1-6.5. Nulo fora de um arraste.
+    var dragItem = null;
+
     // Categoria padrao (do codigo) de um item da Biblioteca. itemKey e a url
     // ('models/asaro.obj') para modelo padrao, ou 'my:<id>' para importado.
     // Importados nao tem categoria padrao => null.
@@ -943,6 +947,31 @@
         var def = defaultCatOf(itemKey);
         if (def) return def;
         return CAT_OUTROS;
+    }
+
+    // Monta a chave de persistencia (itemKey) de um item arrastado. Para modelo
+    // padrao (defmodel) o id ja e a url; para importado (mymodel) e 'my:<id>'.
+    // Para cena (scene) o itemKey e o proprio id (numerico). Funcao pura.
+    function moveItemKeyFor(dragItem) {
+        if (!dragItem) return null;
+        if (dragItem.kind === 'mymodel') return 'my:' + dragItem.id;
+        return dragItem.id;
+    }
+
+    // Calcula o resultado de mover um item para uma gaveta destino, sem DOM e sem
+    // persistir. Retorna { valid, itemKey, destCat, fromCat }. O movimento e valido
+    // sse destCat nao for vazio E for diferente de fromCat. (Req 6.3/6.4/6.5;
+    // Property 7 e 8). A persistencia (setModelCategoryOverride/setSceneCategory)
+    // fica com onMoveItem; aqui so a decisao pura.
+    function computeMove(dragItem, destCat) {
+        var fromCat = dragItem ? dragItem.fromCat : null;
+        var valid = !!(dragItem && destCat != null && destCat !== '' && destCat !== fromCat);
+        return {
+            valid: valid,
+            itemKey: moveItemKeyFor(dragItem),
+            destCat: destCat,
+            fromCat: fromCat
+        };
     }
 
     // ----- Thumbnails (reaproveita override > thumb fixa > icone) -----
@@ -1118,6 +1147,7 @@
         bindCardOpenHandlers(model);
         bindCardDeleteHandlers(model);
         bindCardAddHandlers(model);
+        bindDnD(model);
         bindCatalogTopActions(model);
     }
 
@@ -1205,6 +1235,88 @@
                 if (inp) { inp.setAttribute('data-import', '1'); inp.click(); }
             };
         });
+    }
+
+    // Arrastar-e-soltar de itens entre categorias, via API HTML5 (compat CEF 99).
+    // Cards (exceto o "+") sao a origem; as gavetas (.lr04-drawer) sao os alvos.
+    // Req 6.1-6.5 (biblioteca) e 12.1-12.5 (cenas, ligadas via onMoveItem).
+    function bindDnD(model) {
+        // Cards de item: dragstart guarda o dragItem e marca .lr04-dragging;
+        // dragend limpa realces. O card "+" nao e arrastavel.
+        $all('.lr04-catalog .lr04-drawerbody .lr04-card').forEach(function (card) {
+            if (card.getAttribute('data-action') === 'add-model') return;
+            card.ondragstart = function (ev) {
+                dragItem = {
+                    kind: card.getAttribute('data-kind'),
+                    id: card.getAttribute('data-id'),
+                    fromCat: card.getAttribute('data-cat')
+                };
+                if (ev.dataTransfer) {
+                    ev.dataTransfer.effectAllowed = 'move';
+                    // CEF exige que algum dado seja setado para o arraste valer.
+                    try { ev.dataTransfer.setData('text/plain', String(dragItem.id)); } catch (e) {}
+                }
+                card.className += ' lr04-dragging';
+            };
+            card.ondragend = function () {
+                clearDnDHighlights();
+                dragItem = null;
+            };
+        });
+
+        // Gavetas: dragover permite o drop e destaca; dragleave remove o destaque;
+        // drop aplica o movimento se destCat for valido.
+        $all('.lr04-catalog .lr04-drawer').forEach(function (drawer) {
+            drawer.ondragover = function (ev) {
+                if (ev.preventDefault) ev.preventDefault();
+                if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+                if (drawer.className.indexOf('lr04-dropok') < 0) drawer.className += ' lr04-dropok';
+                return false;
+            };
+            drawer.ondragleave = function () {
+                removeClass(drawer, 'lr04-dropok');
+            };
+            drawer.ondrop = function (ev) {
+                if (ev.preventDefault) ev.preventDefault();
+                if (ev.stopPropagation) ev.stopPropagation();
+                var destCat = drawer.getAttribute('data-cat');
+                var mv = computeMove(dragItem, destCat);
+                clearDnDHighlights();
+                if (mv.valid) onMoveItem(dragItem, destCat, model.page);
+                return false;
+            };
+        });
+    }
+
+    // Remove uma classe de um elemento (ES5, sem classList.remove por compat).
+    function removeClass(el, cls) {
+        if (!el || !el.className) return;
+        var parts = String(el.className).split(/\s+/);
+        var out = [];
+        for (var i = 0; i < parts.length; i++) if (parts[i] && parts[i] !== cls) out.push(parts[i]);
+        el.className = out.join(' ');
+    }
+
+    // Limpa todos os realces de arraste (card em arraste e gavetas destacadas).
+    function clearDnDHighlights() {
+        $all('.lr04-catalog .lr04-dragging').forEach(function (el) { removeClass(el, 'lr04-dragging'); });
+        $all('.lr04-catalog .lr04-dropok').forEach(function (el) { removeClass(el, 'lr04-dropok'); });
+    }
+
+    // Aplica o movimento de um item para a categoria destino e re-renderiza.
+    // Biblioteca: grava override de categoria do modelo. Cenas: grava categoryId
+    // da cena. Movimento invalido (destCat vazio/igual a origem) nao chega aqui.
+    function onMoveItem(item, destCat, page) {
+        var mv = computeMove(item, destCat);
+        if (!mv.valid) return;
+        if (page === 'scenes') {
+            var sid = parseInt(mv.itemKey, 10);
+            try { LightRefStorage.setSceneCategory(sid, destCat); } catch (e) {}
+            renderCatalog('scenes');
+        } else {
+            try { LightRefStorage.setModelCategoryOverride(mv.itemKey, destCat); } catch (e2) {}
+            renderCatalog('library');
+        }
     }
 
     // Deletar item (o "x" no card, so em cards deletaveis). Abre confirmacao;
@@ -1342,6 +1454,8 @@
                 resolveModelCategory: resolveModelCategory,
                 validateNewCategoryName: validateNewCategoryName,
                 itemDeletable: itemDeletable,
+                computeMove: computeMove,
+                moveItemKeyFor: moveItemKeyFor,
                 cardHTML: cardHTML,
                 addCardHTML: addCardHTML,
                 drawerHTML: drawerHTML,

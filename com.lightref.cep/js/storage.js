@@ -35,6 +35,12 @@
         return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s;
     }
 
+    // Rejeita chaves que poluiriam o prototype (seguranca ao indexar mapas por
+    // nome vindo do usuario/geradores). Ver testes de gaveta (chave __proto__).
+    function isSafeKey(k) {
+        return k !== '__proto__' && k !== 'constructor' && k !== 'prototype';
+    }
+
     /* Escrita atomica: grava em .tmp e renomeia (rename e atomico no mesmo volume). */
     function writeJSONAtomic(filePath, data) {
         ensureDir(path.dirname(filePath));
@@ -199,6 +205,7 @@
     // Define ou remove o override de categoria de um modelo. catId nulo/vazio remove a chave.
     function setModelCategoryOverride(itemKey, catId) {
         if (itemKey == null || itemKey === '') return readConfig();
+        if (!isSafeKey(String(itemKey))) return readConfig();
         var cfg = {};
         try { cfg = readConfig(); } catch (e) { cfg = {}; }
         var ov = cfg.modelCatOverrides;
@@ -308,6 +315,7 @@
     // Atualiza o estado (expandida/recolhida) de uma gaveta, criando mapas ausentes.
     function setDrawerState(page, catId, expanded) {
         if (page == null || catId == null) return readConfig();
+        if (!isSafeKey(String(page)) || !isSafeKey(String(catId))) return readConfig();
         var cfg = {};
         try { cfg = readConfig(); } catch (e) { cfg = {}; }
         var ds = (cfg.drawerState && typeof cfg.drawerState === 'object') ? cfg.drawerState : {};
