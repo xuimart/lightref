@@ -660,7 +660,7 @@
         var self = this;
         if (!this.modelRoot) { cb(null); return; }
         var sc = this.scene;
-        // Câmera temporaria de frente (mesmos parametros do gerador).
+        // Camera temporaria de frente (mesmos parametros do gerador).
         var tcam = new BABYLON.ArcRotateCamera('thumbCam', -Math.PI/2, Math.PI/2, 4.2, new BABYLON.Vector3(0,0,0), sc);
         tcam.fov = 0.7; tcam.minZ = 0.05;
         // Luz chapada temporaria.
