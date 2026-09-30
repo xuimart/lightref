@@ -939,58 +939,125 @@
             try { var thumb = scene.thumbnailDataURL(); LightRefStorage.saveScene(name, collectState(), thumb); feedback('Cena salva'); closeDialog(); } catch (e) { feedback('Falha ao salvar', true); }
         };
     }
-    function collectState() {
-        var lights = scene.lightManager.lights.map(function (l){ return {name:l.name,color:l.color,intensity:l.intensity,azimuth:l.azimuth,elevation:l.elevation,enabled:l.enabled,softness:l.softness,sourceSize:l.sourceSize,}; });
-        var matParams = scene.getMaterialParams ? scene.getMaterialParams() : null;
+    // ---------- Estado_Completo (Req 13/14) ----------
+    // A logica pura de coletar/aplicar o estado do estudio foi extraida para
+    // collectSceneState(scene, modelValue) e applySceneState(scene, state, opts),
+    // que dependem apenas do objeto 'scene' (mesmos getters/setters do
+    // LightRefScene) e de callbacks opcionais em 'opts'. Isso permite testar o
+    // round-trip (Property 11/12) em Node com um fake de scene, sem navegador.
+    // collectState()/applyScene() abaixo sao wrappers finos que ligam o 'scene'
+    // real e os efeitos de UI (loadModel/feedback/DOM). Expostos em
+    // window.__lrStateApi para os testes.
+
+    // Coleta o Estado_Completo a partir de 'sc' (objeto scene). 'modelValue' e o
+    // valor do #model-select (modelo carregado atual); pode ser null.
+    function collectSceneState(sc, modelValue) {
+        var lights = sc.lightManager.lights.map(function (l){ return {name:l.name,color:l.color,intensity:l.intensity,azimuth:l.azimuth,elevation:l.elevation,enabled:l.enabled,softness:l.softness,sourceSize:l.sourceSize}; });
+        var matParams = sc.getMaterialParams ? sc.getMaterialParams() : null;
         var mp = {}; if (matParams) { for (var k in matParams) if (matParams.hasOwnProperty(k)) mp[k] = matParams[k]; }
-        var ms = $('#model-select');
         return {
-            model: ms ? ms.value : null,
-            rotation: scene.getModelRotation ? scene.getModelRotation() : null,
-            background: scene.getBackground ? scene.getBackground() : null,
+            schema: 2,
+            model: (modelValue != null) ? modelValue : null,
+            rotation: sc.getModelRotation ? sc.getModelRotation() : null,
+            offset: sc.getModelOffset ? sc.getModelOffset() : null,
+            scaleMult: sc.getModelScaleMult ? sc.getModelScaleMult() : null,
+            background: sc.getBackground ? sc.getBackground() : null,
             lights: lights,
-            fx: scene.postfx.getParams(),
-            focal: scene.getFocalLength(),
-            projection: scene.getProjection ? scene.getProjection() : 'persp',
-            material: scene.getMaterial(),
+            fx: sc.postfx.getParams(),
+            focal: sc.getFocalLength ? sc.getFocalLength() : null,
+            projection: sc.getProjection ? sc.getProjection() : 'persp',
+            material: sc.getMaterial ? sc.getMaterial() : null,
             materialParams: mp,
-            formColor: scene.getFormColor ? scene.getFormColor() : null,
-            environment: scene.getEnvironment ? scene.getEnvironment() : null,
-            envIntensity: scene.getEnvIntensity ? scene.getEnvIntensity() : null
+            formColor: sc.getFormColor ? sc.getFormColor() : null,
+            environment: sc.getEnvironment ? sc.getEnvironment() : null,
+            envIntensity: sc.getEnvIntensity ? sc.getEnvIntensity() : null
         };
     }
-    function applyScene(state) {
+
+    // Aplica o Estado_Completo em 'sc'. Robusto: carrega o modelo primeiro (via
+    // opts.loadModel se dado), trata falha de modelo (opts.onModelFail) e faz
+    // fallback item-a-item (campo ausente => mantem valor atual, nunca lanca).
+    // opts (todos opcionais):
+    //   loadModel(url, done, onFail)  - carrega o modelo; se ausente, aplica direto.
+    //   onModelValue(url)             - reflete o modelo carregado na UI (#model-select).
+    //   onBackground(state)           - efeito de UI extra para o fundo (classe transparent).
+    //   feedback(msg, isErr)          - feedback ao usuario.
+    //   afterApply()                  - hook pos-aplicacao (selectLight/syncMaterialPopover/renderTab).
+    function applySceneState(sc, state, opts) {
         if (!state) return;
+        opts = opts || {};
         function applyRest() {
-            if (state.material) scene.setMaterial(state.material);
-            if (state.materialParams && scene.setMaterialParam) {
-                for (var k in state.materialParams) if (state.materialParams.hasOwnProperty(k)) scene.setMaterialParam(k, state.materialParams[k]);
+            if (state.material != null && sc.setMaterial) sc.setMaterial(state.material);
+            if (state.materialParams && sc.setMaterialParam) {
+                for (var k in state.materialParams) if (state.materialParams.hasOwnProperty(k)) sc.setMaterialParam(k, state.materialParams[k]);
             }
-            if (state.formColor && scene.setFormColor) scene.setFormColor(state.formColor);
-            if (state.rotation && scene.setModelRotation) {
-                scene.setModelRotation(state.rotation.yaw||0, state.rotation.pitch||0);
-                if (scene.setModelRoll && state.rotation.roll != null) scene.setModelRoll(state.rotation.roll);
+            if (state.formColor != null && sc.setFormColor) sc.setFormColor(state.formColor);
+            if (state.rotation && sc.setModelRotation) {
+                sc.setModelRotation(state.rotation.yaw||0, state.rotation.pitch||0);
+                if (sc.setModelRoll && state.rotation.roll != null) sc.setModelRoll(state.rotation.roll);
             }
-            if (state.background && scene.setBackground) {
+            if (state.offset && sc.setModelOffset) {
+                var o = state.offset;
+                if (o.x != null) sc.setModelOffset('x', o.x);
+                if (o.y != null) sc.setModelOffset('y', o.y);
+                if (o.z != null) sc.setModelOffset('z', o.z);
+            }
+            if (state.scaleMult != null && sc.setModelScaleMult) sc.setModelScaleMult(state.scaleMult);
+            if (state.background && sc.setBackground) {
                 var tr = state.background.transparent;
-                scene.setBackground(tr ? 'transparent' : 'color', state.background.color || '#3a4a6a');
-                var vp = $('.lr04-viewport'); if (vp) vp.classList.toggle('transparent', !!tr);
+                sc.setBackground(tr ? 'transparent' : 'color', state.background.color || '#3a4a6a');
+                if (opts.onBackground) opts.onBackground(state);
             }
-            if (state.projection && scene.setProjection) scene.setProjection(state.projection);
-            if (state.focal) scene.setFocalLength(state.focal);
-            if (scene.setEnvironment) scene.setEnvironment(state.environment || null);
-            if (state.envIntensity != null && scene.setEnvIntensity) scene.setEnvIntensity(state.envIntensity);
-            var ex = scene.lightManager.lights.slice(); ex.forEach(function(l){ scene.lightManager.remove(l.id); });
-            (state.lights||[]).forEach(function(ld){ scene.lightManager.add(ld); });
-            selectLight(scene.lightManager.lights.length?scene.lightManager.lights[0].id:null);
-            if (state.fx) scene.postfx.applyParams(state.fx);
-            syncMaterialPopover();
-            renderTab();
+            if (state.projection != null && sc.setProjection) sc.setProjection(state.projection);
+            if (state.focal != null && sc.setFocalLength) sc.setFocalLength(state.focal);
+            if (sc.setEnvironment) sc.setEnvironment(state.environment || null);
+            if (state.envIntensity != null && sc.setEnvIntensity) sc.setEnvIntensity(state.envIntensity);
+            if (state.lights != null) {
+                var ex = sc.lightManager.lights.slice(); ex.forEach(function(l){ sc.lightManager.remove(l.id); });
+                state.lights.forEach(function(ld){ sc.lightManager.add(ld); });
+            }
+            if (state.fx && sc.postfx && sc.postfx.applyParams) sc.postfx.applyParams(state.fx);
+            if (opts.afterApply) opts.afterApply();
         }
-        var ms = $('#model-select');
-        if (state.model) { if (ms) ms.value = state.model; loadModel(state.model, applyRest); }
-        else { applyRest(); }
+        if (state.model != null) {
+            if (opts.onModelValue) opts.onModelValue(state.model);
+            if (opts.loadModel) {
+                opts.loadModel(state.model, applyRest, function () {
+                    if (opts.feedback) opts.feedback('Falha ao carregar modelo da cena', true);
+                    applyRest();
+                });
+            } else {
+                applyRest();
+            }
+        } else {
+            applyRest();
+        }
     }
+
+    function collectState() {
+        var ms = $('#model-select');
+        return collectSceneState(scene, ms ? ms.value : null);
+    }
+    function applyScene(state) {
+        applySceneState(scene, state, {
+            loadModel: function (url, done, onFail) { loadModel(url, done, onFail); },
+            onModelValue: function (url) { var ms = $('#model-select'); if (ms) ms.value = url; },
+            onBackground: function (st) {
+                var tr = st.background && st.background.transparent;
+                var vp = $('.lr04-viewport'); if (vp) vp.classList.toggle('transparent', !!tr);
+            },
+            feedback: feedback,
+            afterApply: function () {
+                selectLight(scene.lightManager.lights.length ? scene.lightManager.lights[0].id : null);
+                syncMaterialPopover();
+                renderTab();
+            }
+        });
+    }
+
+    // Exposto para testes em Node (round-trip do Estado_Completo). So quando ha
+    // 'window' (no CEF sempre ha; em Node os testes criam um window fake).
+    try { if (typeof window !== 'undefined' && window) window.__lrStateApi = { collectSceneState: collectSceneState, applySceneState: applySceneState }; } catch (e) {}
 
 })();
 

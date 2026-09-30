@@ -5,7 +5,7 @@
   "type": "commonjs",
   "private": true,
   "scripts": {
-    "test": "node tests/drawerState.property.test.js && node tests/renameCategory.property.test.js && node tests/deleteModel.example.test.js && node tests/saveScene.property.test.js"
+    "test": "node tests/drawerState.property.test.js && node tests/renameCategory.property.test.js && node tests/deleteModel.example.test.js && node tests/saveScene.property.test.js && node tests/stateRoundtrip.property.test.js && node tests/stateMissingFields.property.test.js"
   },
   "devDependencies": {
     "fast-check": "^4.10.2"
