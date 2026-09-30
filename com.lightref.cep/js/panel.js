@@ -1337,8 +1337,8 @@
         });
     }
 
-    // Dialogo de confirmacao de delecao. So mymodel e tratado nesta etapa; cena
-    // fica para a Etapa 6 (nao quebra: apenas fecha o dialogo).
+    // Dialogo de confirmacao de delecao. Trata modelo importado (mymodel) e cena
+    // (scene). Cancelar nao altera nada. (Req 1/2 e Req 11)
     function confirmDeleteItem(page, kind, id, title) {
         openDialog('Excluir',
             '<p style="margin:0 0 12px">Excluir ' + escapeText(title) + '?</p>' +
@@ -1360,8 +1360,12 @@
                 }
                 closeDialog();
                 renderCatalog('library');
+            } else if (kind === 'scene') {
+                var sid = parseInt(id, 10);
+                try { LightRefStorage.deleteScene(sid); } catch (e) {}
+                closeDialog();
+                renderCatalog('scenes');
             } else {
-                // scene: tratado na Etapa 6.
                 closeDialog();
             }
         };
