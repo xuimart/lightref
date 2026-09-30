@@ -626,6 +626,34 @@
     };
 
     // Miniatura PADRONIZADA (igual as geradas offline): camera de frente, luz
+    // Miniatura da CENA como o usuario montou (luzes, material, fundo atuais),
+    // mas em retrato 480x640 e alta qualidade (sem distorcao/achatamento). Usa a
+    // camera atual do usuario num RenderTarget; so esconde os marcadores de luz.
+    // Assincrono: cb(dataURL PNG).
+    Scene.prototype.sceneThumbnail = function (cb) {
+        var self = this;
+        var sc = this.scene;
+        // Esconde apenas os helpers de luz (esferinhas/linhas), preservando o
+        // resto exatamente como esta na cena.
+        var hadHelpers = this.lightManager && this.lightManager.showHelpers;
+        if (this.lightManager && this.lightManager.setHelpersVisible) this.lightManager.setHelpersVisible(false);
+        function restore() {
+            if (self.lightManager && hadHelpers && self.lightManager.setHelpersVisible) self.lightManager.setHelpersVisible(true);
+        }
+        try {
+            // Render target retrato (3:4). O Babylon ajusta a projecao ao aspect
+            // do alvo, entao a imagem NAO fica achatada como no canvas widescreen.
+            BABYLON.Tools.CreateScreenshotUsingRenderTarget(self.engine, self.camera, { width: 600, height: 800 }, function (data) {
+                restore();
+                cb(data);
+            }, 'image/png');
+        } catch (e) {
+            restore();
+            // Fallback: thumb simples (pode distorcer, mas nao quebra o salvar).
+            try { cb(self.thumbnailDataURL ? self.thumbnailDataURL() : null); } catch (e2) { cb(null); }
+        }
+    };
+
     // chapada, fundo cinza, retrato 480x640. Renderiza o modelo principal numa
     // camera/luz temporarias e captura via RenderTarget. Assincrono: cb(dataURL).
     Scene.prototype.standardThumbnail = function (cb) {

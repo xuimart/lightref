@@ -1492,7 +1492,17 @@
         openDialog('Salvar cena', '<div class="lr04-row"><span>Nome</span><input type="text" id="scene-name" style="grid-column:2 / span 2;background:#303540;border:1px solid #414953;border-radius:4px;color:#e1e2e6;height:30px;padding:0 9px"></div><button id="do-save" style="background:#303540;margin-top:8px">Salvar</button>');
         $('#do-save').onclick = function () {
             var name = ($('#scene-name').value||'').trim(); if (!name) return;
-            try { var thumb = scene.thumbnailDataURL(); LightRefStorage.saveScene(name, collectState(), thumb); feedback('Cena salva'); closeDialog(); } catch (e) { feedback('Falha ao salvar', true); }
+            var st = collectState();
+            feedback('Salvando cena...');
+            function finish(thumb) {
+                try { LightRefStorage.saveScene(name, st, thumb || null); feedback('Cena salva'); closeDialog(); }
+                catch (e) { feedback('Falha ao salvar', true); }
+            }
+            // Miniatura da cena em retrato e alta qualidade (assincrona).
+            try {
+                if (scene.sceneThumbnail) scene.sceneThumbnail(finish);
+                else finish(scene.thumbnailDataURL ? scene.thumbnailDataURL() : null);
+            } catch (e) { finish(null); }
         };
     }
     // ---------- Estado_Completo (Req 13/14) ----------
