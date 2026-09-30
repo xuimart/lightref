@@ -716,10 +716,9 @@
                 self.lightManager.update(l.id, 'azimuth', Math.round(az));
                 self.lightManager.update(l.id, 'elevation', Math.round(el));
             } else if (mode === 'colorint') {
-                // Vertical: intensidade. Horizontal: hue da cor.
+                // So intensidade (vertical). A cor/hue fica no modo Ctrl+Shift+Alt.
                 var inten = Math.max(0, Math.min(10, l.intensity - dy * 0.02));
                 self.lightManager.update(l.id, 'intensity', Math.round(inten * 10) / 10);
-                if (Math.abs(dx) > 0) self.lightManager.update(l.id, 'color', _shiftHue(l.color, dx * 1.2));
             } else if (mode === 'huetemp') {
                 // Horizontal: hue. Vertical: temperatura (cima esquenta).
                 if (Math.abs(dx) > 0) self.lightManager.update(l.id, 'color', _shiftHue(l.color, dx * 1.2));
