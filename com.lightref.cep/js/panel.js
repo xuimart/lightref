@@ -262,7 +262,7 @@
         if (cfg.material) scene.setMaterial(cfg.material);
         if (cfg.environment && scene.setEnvironment) scene.setEnvironment(cfg.environment);
         if (cfg.bg && scene.setBackground) { scene.setBackground(cfg.bg.transparent ? 'transparent' : 'color', cfg.bg.color || '#3a4a6a'); var vp0 = $('.lr04-viewport'); if (vp0) vp0.classList.toggle('transparent', !!cfg.bg.transparent); }
-        loadModelSafe(cfg.lastModel || MODELS[0].v);
+        loadModelSafe(MODELS[0].v);   // sempre abre no Asaro (modelo padrao)
         var l = scene.lightManager.add({ name: nextLightName() });
         selectLight(l.id);
         syncMaterialPopover();
