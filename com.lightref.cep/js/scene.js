@@ -20,6 +20,9 @@
         this._bgColor = '#3a4a6a'; this._bgTransparent = false;
         this._projection = 'persp'; this._focalMM = 50;
         this._yaw = 0; this._pitch = 0;
+        // Composicao: objetos independentes numa 'cena' separada do modelo principal.
+        this.sceneObjects = []; this._objId = 1; this._selectedObj = null;
+        this._compHidden = true;
     }
 
     function hexToColor3(hex) { var c = BABYLON.Color3.FromHexString(hex); return c; }
@@ -66,6 +69,7 @@
         this.postfx = new LightRefPostFX(this.scene, this.camera, this.engine);
 
         this.engine.runRenderLoop(function () { self.scene.render(); });
+        this._bindXformPointer();
         window.addEventListener('resize', function () { self.engine.resize(); });
         if (typeof ResizeObserver !== 'undefined') {
             this._ro = new ResizeObserver(function () { self.engine.resize(); });
@@ -732,6 +736,270 @@
         });
     };
     Scene.prototype.onLightShortcut = function (cb) { this._onLightShortcut = cb; };
+
+    // ============================================================
+    // COMPOSICAO: cena de objetos independentes (separada do modelo principal)
+    // ============================================================
+
+    // Mostra/esconde o modelo principal (usado ao entrar/sair da aba Composicao).
+    Scene.prototype.setMainModelVisible = function (on) {
+        if (this.modelRoot && this.modelRoot.setEnabled) this.modelRoot.setEnabled(!!on);
+    };
+
+    // Mostra/esconde TODOS os objetos da composicao. Ao mostrar, respeita o
+    // estado individual (objeto ocultado pelo 'olho' continua oculto).
+    Scene.prototype.setCompositionVisible = function (on) {
+        this._compHidden = !on;
+        for (var i = 0; i < this.sceneObjects.length; i++) {
+            var o = this.sceneObjects[i];
+            if (o.pivot && o.pivot.setEnabled) o.pivot.setEnabled(on ? !o.hidden : false);
+        }
+    };
+
+    // Carrega um modelo/forma como objeto INDEPENDENTE, com pivot proprio.
+    // Compartilha o material atual. NAO mexe no modelo principal.
+    Scene.prototype.addSceneObject = function (url, onDone) {
+        var self = this;
+        var idx = url.lastIndexOf('/');
+        var rootUrl = url.substring(0, idx + 1);
+        var fileName = url.substring(idx + 1);
+        BABYLON.SceneLoader.ImportMesh('', rootUrl, fileName, this.scene, function (meshes) {
+          try {
+            var id = self._objId++;
+            var pivot = new BABYLON.TransformNode('obj' + id, self.scene);
+            var real = [];
+            for (var i = 0; i < meshes.length; i++) {
+                var mesh = meshes[i];
+                if (mesh.getTotalVertices && mesh.getTotalVertices() > 0) {
+                    real.push(mesh);
+                    mesh.receiveShadows = true;
+                    // Recalcula normais se vierem zeradas (STL/alguns OBJ).
+                    if (mesh.getVerticesData) { try {
+                        var nrm = mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind); var needN = !nrm;
+                        if (nrm && nrm.length >= 9) {
+                            var bad=0, sm=0, st=Math.max(3, Math.floor(nrm.length/300)*3);
+                            for (var q=0;q+2<nrm.length;q+=st){ var mg=Math.abs(nrm[q])+Math.abs(nrm[q+1])+Math.abs(nrm[q+2]); sm++; if(mg<1e-6)bad++; }
+                            if (sm>0 && bad===sm) needN=true;
+                        }
+                        if (needN) { var po=mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind), ix=mesh.getIndices(); if(po&&ix){ var no=[]; BABYLON.VertexData.ComputeNormals(po,ix,no); mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind, no); } }
+                    } catch (e) {} }
+                }
+                if (!mesh.parent) mesh.parent = pivot;
+            }
+            // Normaliza escala/posicao pelo bounding (mesmo criterio do modelo principal).
+            var mn = new BABYLON.Vector3(1e9,1e9,1e9), mx = new BABYLON.Vector3(-1e9,-1e9,-1e9);
+            for (var j=0;j<real.length;j++){ real[j].computeWorldMatrix(true); var bi=real[j].getBoundingInfo().boundingBox; mn=BABYLON.Vector3.Minimize(mn,bi.minimumWorld); mx=BABYLON.Vector3.Maximize(mx,bi.maximumWorld); }
+            var sz = mx.subtract(mn), ctr = mn.add(sz.scale(0.5));
+            var maxDim = Math.max(sz.x, sz.y, sz.z) || 1;
+            var baseScale = 2 / maxDim;
+            var groundY = (self.ground ? self.ground.position.y : -1.5);
+            var obj = {
+                id:id, url:url, pivot:pivot, meshes:real, baseScale:baseScale,
+                baseCenter:{ x:-ctr.x*baseScale, y:groundY - mn.y*baseScale, z:-ctr.z*baseScale },
+                offset:{ x:(self.sceneObjects.length+1)*1.1, y:0, z:0 },
+                scaleMult:1, sx:1, sy:1, sz:1, yaw:0, pitch:0, roll:0, hidden:false
+            };
+            self.sceneObjects.push(obj);
+            self._applyObjTransform(obj);
+            // Material compartilhado.
+            var mat = self._ensureMaterial();
+            for (var k=0;k<real.length;k++) real[k].material = mat;
+            // Sombra: adiciona como caster sem apagar os ja registrados.
+            if (self.lightManager && self.lightManager.addShadowCasters) self.lightManager.addShadowCasters(real);
+            // Respeita a visibilidade atual da composicao.
+            pivot.setEnabled(!self._compHidden);
+            if (onDone) onDone(null, id);
+          } catch (e) { if (onDone) onDone(e); }
+        }, null, function (sc, msg) { if (onDone) onDone(msg || 'load error'); });
+    };
+
+    // Aplica posicao/escala/rotacao do objeto de composicao (com distorcao por eixo).
+    Scene.prototype._applyObjTransform = function (obj) {
+        var s = obj.baseScale * obj.scaleMult;
+        obj.pivot.scaling = new BABYLON.Vector3(s * (obj.sx||1), s * (obj.sy||1), s * (obj.sz||1));
+        var bc = obj.baseCenter, o = obj.offset;
+        // Reassenta no chao ao mudar a escala Y (a base acompanha o piso).
+        var groundY = (this.ground ? this.ground.position.y : -1.5);
+        var yFloor = groundY - (obj.minY != null ? obj.minY : 0) * s * (obj.sy||1);
+        obj.pivot.position = new BABYLON.Vector3(bc.x + o.x, yFloor + o.y, bc.z + o.z);
+        obj.pivot.rotation = new BABYLON.Vector3((obj.pitch||0)*Math.PI/180,(obj.yaw||0)*Math.PI/180,(obj.roll||0)*Math.PI/180);
+    };
+
+    Scene.prototype.listSceneObjects = function () {
+        return this.sceneObjects.map(function (o) { return { id:o.id, url:o.url }; });
+    };
+    Scene.prototype.getSceneObject = function (id) {
+        for (var i=0;i<this.sceneObjects.length;i++) if (this.sceneObjects[i].id===id) return this.sceneObjects[i];
+        return null;
+    };
+    Scene.prototype.removeSceneObject = function (id) {
+        for (var i=0;i<this.sceneObjects.length;i++) {
+            if (this.sceneObjects[i].id===id) {
+                this.sceneObjects[i].pivot.dispose(false, true);
+                this.sceneObjects.splice(i,1);
+                if (this._selectedObj===id) { this._selectedObj=null; if (this.setGizmoMode) this.setGizmoMode('off'); }
+                return;
+            }
+        }
+    };
+    Scene.prototype.clearSceneObjects = function () {
+        for (var i=0;i<this.sceneObjects.length;i++) this.sceneObjects[i].pivot.dispose(false, true);
+        this.sceneObjects = []; this._selectedObj = null;
+    };
+    Scene.prototype.isSceneObjectVisible = function (id) {
+        var o = this.getSceneObject(id); return o ? !o.hidden : false;
+    };
+    Scene.prototype.setSceneObjectVisible = function (id, v) {
+        var o = this.getSceneObject(id); if (!o) return;
+        o.hidden = !v;
+        if (o.pivot && o.pivot.setEnabled) o.pivot.setEnabled(v && !this._compHidden);
+    };
+
+    // ============================================================
+    // COMPOSICAO - Etapa 2/3/4: selecao (highlight), xform G/S/R, distorcao
+    // ============================================================
+
+    Scene.prototype._ensureHighlight = function () {
+        if (!this._hl) {
+            this._hl = new BABYLON.HighlightLayer('objhl', this.scene);
+            this._hl.innerGlow = false; this._hl.outerGlow = true;
+        }
+        return this._hl;
+    };
+
+    // Destaca visualmente o objeto de composicao selecionado.
+    Scene.prototype._refreshSelectionHighlight = function () {
+        var hl = this._ensureHighlight();
+        hl.removeAllMeshes();
+        var o = this.getSceneObject(this._selectedObj);
+        if (o) {
+            for (var i=0;i<o.meshes.length;i++) {
+                try { hl.addMesh(o.meshes[i], new BABYLON.Color3(1.0, 0.62, 0.2)); } catch (e) {}
+            }
+        }
+    };
+
+    // Alvo do xform: objeto de composicao selecionado, ou o modelo principal (aba pos).
+    Scene.prototype._xformTarget = function () {
+        var o = this.getSceneObject(this._selectedObj);
+        if (o) {
+            var self = this;
+            return {
+                kind: 'obj',
+                getPos: function(){ return { x:o.offset.x, y:o.offset.y, z:o.offset.z }; },
+                addPos: function(dx,dy,dz){ o.offset.x+=dx; o.offset.y+=dy; o.offset.z+=dz; self._applyObjTransform(o); },
+                addRot: function(dx,dy,dz){ o.pitch=(o.pitch||0)+dx; o.yaw=(o.yaw||0)+dy; o.roll=(o.roll||0)+dz; self._applyObjTransform(o); },
+                mulScale: function(f){ o.scaleMult=Math.max(0.05, o.scaleMult*f); self._applyObjTransform(o); }
+            };
+        }
+        if (this.modelRoot) {
+            var s2 = this;
+            return {
+                kind: 'model',
+                getPos: function(){ var o2=s2._offset||{x:0,y:0,z:0}; return {x:o2.x,y:o2.y,z:o2.z}; },
+                addPos: function(dx,dy,dz){ var o2=s2._offset||{x:0,y:0,z:0}; s2._offset={x:o2.x+dx,y:o2.y+dy,z:o2.z+dz}; s2._applyTransform(); },
+                addRot: function(dx,dy,dz){ s2._pitch=(s2._pitch||0)+dx*180/Math.PI; s2._yaw=(s2._yaw||0)+dy*180/Math.PI; s2._roll=(s2._roll||0)+dz*180/Math.PI; s2._applyTransform(); },
+                mulScale: function(f){ s2._scaleMult=Math.max(0.05,(s2._scaleMult||1)*f); s2._applyTransform(); }
+            };
+        }
+        return null;
+    };
+
+    Scene.prototype.onXform = function (cb) { this._onXform = cb; };
+    Scene.prototype.onTransformChanged = function (cb) { this._onTransformChanged = cb; };
+    Scene.prototype.isXforming = function () { return !!this._xf; };
+
+    // Inicia uma transformacao interativa (mode: 'move'|'scale'|'rotate').
+    Scene.prototype.beginXform = function (mode) {
+        var tgt = this._xformTarget();
+        if (!tgt) { if (this._onXform) this._onXform('none'); return false; }
+        // Snapshot para poder cancelar (Esc).
+        this._xf = { mode: mode, axis: null, target: tgt, lastX: null, lastY: null, snap: this._snapshotTarget(tgt) };
+        if (this._onXform) this._onXform('start', mode);
+        return true;
+    };
+
+    Scene.prototype._snapshotTarget = function (tgt) {
+        var o = this.getSceneObject(this._selectedObj);
+        if (o) return { offset:{x:o.offset.x,y:o.offset.y,z:o.offset.z}, pitch:o.pitch,yaw:o.yaw,roll:o.roll, scaleMult:o.scaleMult };
+        return { offset:{x:(this._offset||{}).x||0,y:(this._offset||{}).y||0,z:(this._offset||{}).z||0}, pitch:this._pitch,yaw:this._yaw,roll:this._roll, scaleMult:this._scaleMult||1 };
+    };
+    Scene.prototype._restoreTarget = function (snap) {
+        var o = this.getSceneObject(this._selectedObj);
+        if (o) { o.offset={x:snap.offset.x,y:snap.offset.y,z:snap.offset.z}; o.pitch=snap.pitch; o.yaw=snap.yaw; o.roll=snap.roll; o.scaleMult=snap.scaleMult; this._applyObjTransform(o); }
+        else if (this.modelRoot) { this._offset={x:snap.offset.x,y:snap.offset.y,z:snap.offset.z}; this._pitch=snap.pitch; this._yaw=snap.yaw; this._roll=snap.roll; this._scaleMult=snap.scaleMult; this._applyTransform(); }
+    };
+
+    Scene.prototype.setXformAxis = function (axis) {
+        if (!this._xf) return;
+        this._xf.axis = (this._xf.axis === axis) ? null : axis;  // re-pressionar destrava
+        if (this._onXform) this._onXform('axis', this._xf.axis);
+    };
+
+    Scene.prototype.confirmXform = function () {
+        if (!this._xf) return;
+        this._xf = null;
+        if (this._onXform) this._onXform('confirm');
+        if (this._onTransformChanged) this._onTransformChanged();
+    };
+    Scene.prototype.cancelXform = function () {
+        if (!this._xf) return;
+        this._restoreTarget(this._xf.snap);
+        this._xf = null;
+        if (this._onXform) this._onXform('cancel');
+    };
+
+    // Movimento do mouse durante o xform (chamado pelo pointer bind).
+    Scene.prototype._xformMove = function (ev) {
+        var xf = this._xf; if (!xf) return;
+        if (xf.lastX == null) { xf.lastX = ev.clientX; xf.lastY = ev.clientY; return; }
+        var dx = ev.clientX - xf.lastX, dy = ev.clientY - xf.lastY;
+        xf.lastX = ev.clientX; xf.lastY = ev.clientY;
+        var ax = xf.axis;
+        if (xf.mode === 'move') {
+            var sp = 0.01;
+            var mx = (ax==null||ax==='x') ? dx*sp : 0;
+            var my = (ax==null||ax==='y') ? -dy*sp : 0;
+            var mz = (ax==='z') ? dx*sp : 0;
+            if (ax==='y') { mx = 0; my = -dy*sp; }
+            xf.target.addPos(mx, my, mz);
+        } else if (xf.mode === 'scale') {
+            var f = 1 + (-dy) * 0.01;
+            xf.target.mulScale(f);
+        } else if (xf.mode === 'rotate') {
+            var r = dx * 0.01;
+            if (ax==='x') xf.target.addRot(r,0,0);
+            else if (ax==='z') xf.target.addRot(0,0,r);
+            else xf.target.addRot(0,r,0);
+        }
+    };
+
+    // Liga o mouse do visor ao xform em andamento (clique confirma).
+    Scene.prototype._bindXformPointer = function () {
+        var self = this, canvas = this.canvas;
+        window.addEventListener('pointermove', function (ev) { if (self._xf) self._xformMove(ev); });
+        canvas.addEventListener('pointerdown', function (ev) {
+            if (self._xf) { self.confirmXform(); ev.preventDefault(); ev.stopPropagation(); }
+        }, true);
+    };
+
+    // selectSceneObject com highlight (sobrescreve o stub da Etapa 1).
+    Scene.prototype.selectSceneObject = function (id) {
+        this._selectedObj = id;
+        this._refreshSelectionHighlight();
+    };
+
+    // Distorcao por eixo (sx/sy/sz) do objeto selecionado.
+    Scene.prototype.setSceneObjAxisScale = function (axis, value) {
+        var o = this.getSceneObject(this._selectedObj); if (!o) return;
+        var v = Math.max(0.05, parseFloat(value));
+        if (axis === 'x') o.sx = v; else if (axis === 'y') o.sy = v; else if (axis === 'z') o.sz = v;
+        this._applyObjTransform(o);
+    };
+    Scene.prototype.getSceneObjAxisScale = function () {
+        var o = this.getSceneObject(this._selectedObj);
+        return o ? { x:o.sx||1, y:o.sy||1, z:o.sz||1 } : { x:1, y:1, z:1 };
+    };
 
     global.LightRefScene = Scene;
 })(window);
