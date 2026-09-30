@@ -577,9 +577,7 @@
                 fieldsHost.innerHTML =
                     row('Intensidade','sl-intensity',0,10,0.1, l.intensity, '') +
                     row('Girar','sl-azimuth',0,360,1, l.azimuth, '\u00b0') +
-                    row('Altura','sl-elevation',-90,90,1, l.elevation, '\u00b0') +
-                    row('Suavidade','sl-softness',1,96,1, (l.softness!=null?l.softness:32), '') +
-                    row('Abertura','sl-srcsize',1,14,0.5, (l.sourceSize!=null?l.sourceSize:6), '');
+                    row('Altura','sl-elevation',-90,90,1, l.elevation, '\u00b0');
                 wireRanges(fieldsHost);
             } else {
                 fieldsHost.innerHTML = '';
@@ -829,8 +827,6 @@
             case 'sl-intensity': scene.lightManager.update(selectedLightId,'intensity', v); break;
             case 'sl-azimuth': scene.lightManager.update(selectedLightId,'azimuth', parseInt(value,10)); break;
             case 'sl-elevation': scene.lightManager.update(selectedLightId,'elevation', parseInt(value,10)); break;
-            case 'sl-softness': scene.lightManager.update(selectedLightId,'softness', parseFloat(value)); break;
-            case 'sl-srcsize': scene.lightManager.update(selectedLightId,'sourceSize', parseFloat(value)); break;
             case 'sl-focal': scene.setFocalLength(parseInt(value,10)); break;
             case 'sl-envint': if (scene.setEnvIntensity) scene.setEnvIntensity(v); break;
             case 'sl-exposure': scene.postfx.setParam('exposure', v); break;
