@@ -1,0 +1,29 @@
+{
+  "pbtResults": {
+    "2.2 Escrever teste de propriedade para salvar cena sobrescrevendo por nome": {
+      "status": "passed",
+      "lastRunTimestamp": 1790780122421
+    },
+    "5.1 Escrever teste de propriedade round-trip do Estado_Completo": {
+      "status": "passed",
+      "lastRunTimestamp": 1790781258014
+    },
+    "5.2 Escrever teste de propriedade para cena antiga com campos ausentes": {
+      "status": "passed",
+      "lastRunTimestamp": 1790781321567
+    },
+    "12.1 Escrever teste de propriedade para nome vazio/espacos rejeitado": {
+      "status": "passed",
+      "lastRunTimestamp": 1790787960282
+    },
+    "12.2 Escrever teste de propriedade para nome duplicado rejeitado": {
+      "status": "passed",
+      "lastRunTimestamp": 1790787960998
+    },
+    "17.1 Escrever teste de propriedade para deletar cena remove apenas a alvo": {
+      "status": "passed",
+      "lastRunTimestamp": 1790789187802
+    }
+  },
+  "executionHistory": {}
+}

@@ -24,3 +24,12 @@ _*.txt
 node_modules/
 package.json
 package-lock.json
+build_*/lightref.zip
+build_*/*.exe
+*.bak
+_lr04_*.html
+_lr04_*.css
+lightref-v04-atualizado.html
+com.lightref.cep/_thumbgen.html
+com.lightref.cep/index.css.bak
+com.lightref.cep/index.html.bak
