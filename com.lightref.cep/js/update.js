@@ -1,4 +1,4 @@
-﻿/*
+/*
  * update.js - verificacao de atualizacao do LightRef (padrao Xuimart).
  * ASCII-only. Faz um GET silencioso ao version.json, compara com a versao
  * compilada e, se houver versao nova, mostra um banner com o changelog e um

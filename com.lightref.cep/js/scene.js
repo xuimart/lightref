@@ -1,4 +1,4 @@
-﻿/*
+/*
  * scene.js - motor 3D do LightRef sobre Babylon.js. ASCII-only comments.
  * Mantem a MESMA API publica que o panel.js ja usava (loadOBJ, setMaterial,
  * setBackground, setModelRotation, setCameraPreset, setFocalLength, setProjection,
@@ -55,11 +55,11 @@
 
         // Fill ambiente minimo: sem luzes do usuario a cena fica praticamente escura.
         this.ambient = new BABYLON.HemisphericLight('amb', new BABYLON.Vector3(0, 1, 0), this.scene);
-        this.ambient.intensity = 0.03;
+        this.ambient.intensity = 0.012;
         this.ambient.diffuse = new BABYLON.Color3(1, 1, 1);
-        this.ambient.groundColor = new BABYLON.Color3(0.1, 0.1, 0.12);
+        this.ambient.groundColor = new BABYLON.Color3(0.05, 0.05, 0.06);
         // Ambiente PBR (reflexos) tambem baixo, senao ilumina sem luz.
-        this.scene.environmentIntensity = 0.15;
+        this.scene.environmentIntensity = 0.08;
 
         this._buildGround();
         this.lightManager = new LightManager(this.scene);
@@ -100,9 +100,12 @@
         // ShadowOnlyMaterial vive na lib de materiais (nao carregada). Usamos um
         // StandardMaterial escuro semi-transparente: so a sombra fica visivel.
         var m = new BABYLON.StandardMaterial('gmat', this.scene);
-        m.diffuseColor = new BABYLON.Color3(0, 0, 0);
+        // Chao cinza claro visivel: a area iluminada aparece e a sombra projetada
+        // escurece sobre ela, dando contraste real (antes o chao preto escondia
+        // a sombra, que 'escurecia' algo ja escuro).
+        m.diffuseColor = new BABYLON.Color3(0.62, 0.62, 0.64);
         m.specularColor = new BABYLON.Color3(0, 0, 0);
-        m.alpha = 0.28;
+        m.alpha = 0.85;
         g.material = m;
         g.receiveShadows = true;
         this.ground = g;
@@ -621,15 +624,75 @@
     Scene.prototype.onJointPicked = function () {};
     Scene.prototype.requestRender = function () {};
 
-    // Shift + arrastar no visor gira a luz principal (a primeira da lista).
+    // ---- Atalhos de ARRASTAR no visor para editar a luz principal ----
+    // Sem Ctrl: Shift+arrastar gira a luz (azimute/elevacao).
+    // Ctrl+Shift+arrastar: intensidade (vertical) + hue da cor (horizontal).
+    // Ctrl+Shift+Alt+arrastar: hue da cor (horizontal) + temperatura (vertical).
+    // Helpers de cor (hex <-> hsl) para girar hue e ajustar temperatura.
+    function _hexToRgb(hex) {
+        hex = String(hex).replace('#', '');
+        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+        return { r: parseInt(hex.slice(0,2),16), g: parseInt(hex.slice(2,4),16), b: parseInt(hex.slice(4,6),16) };
+    }
+    function _rgbToHex(r, g, b) {
+        function h(x){ x = Math.max(0, Math.min(255, Math.round(x))); var t = x.toString(16); return t.length < 2 ? '0'+t : t; }
+        return '#' + h(r) + h(g) + h(b);
+    }
+    function _rgbToHsl(r, g, b) {
+        r/=255; g/=255; b/=255;
+        var mx = Math.max(r,g,b), mn = Math.min(r,g,b), h, s, l = (mx+mn)/2;
+        if (mx === mn) { h = s = 0; }
+        else {
+            var d = mx - mn;
+            s = l > 0.5 ? d/(2-mx-mn) : d/(mx+mn);
+            if (mx === r) h = (g-b)/d + (g < b ? 6 : 0);
+            else if (mx === g) h = (b-r)/d + 2;
+            else h = (r-g)/d + 4;
+            h /= 6;
+        }
+        return { h: h, s: s, l: l };
+    }
+    function _hslToRgb(h, s, l) {
+        var r, g, b;
+        if (s === 0) { r = g = b = l; }
+        else {
+            function hue2rgb(p, q, t) {
+                if (t < 0) t += 1; if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q-p)*6*t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q-p)*(2/3-t)*6;
+                return p;
+            }
+            var q = l < 0.5 ? l*(1+s) : l+s-l*s, p = 2*l - q;
+            r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
+        }
+        return { r: r*255, g: g*255, b: b*255 };
+    }
+    function _shiftHue(hex, deltaDeg) {
+        var c = _hexToRgb(hex), hsl = _rgbToHsl(c.r, c.g, c.b);
+        hsl.h = ((hsl.h + deltaDeg/360) % 1 + 1) % 1;
+        if (hsl.s < 0.05) hsl.s = 0.6;   // se era branco/cinza, da saturacao para o hue aparecer
+        var o = _hslToRgb(hsl.h, hsl.s, hsl.l);
+        return _rgbToHex(o.r, o.g, o.b);
+    }
+    function _shiftTemp(hex, delta) {
+        // delta > 0 esquenta (mais vermelho, menos azul); < 0 esfria.
+        var c = _hexToRgb(hex);
+        return _rgbToHex(c.r + delta, c.g + delta * 0.2, c.b - delta);
+    }
+
     Scene.prototype._bindLightShortcut = function () {
         var self = this;
-        var dragging = false, lastX = 0, lastY = 0;
+        var dragging = false, mode = 'rotate', lastX = 0, lastY = 0;
         var canvas = this.canvas;
 
         canvas.addEventListener('pointerdown', function (ev) {
+            // Precisa de Shift e do botao esquerdo. Ctrl/Alt escolhem o modo.
             if (!ev.shiftKey || ev.button !== 0) return;
             if (!self.lightManager || !self.lightManager.lights.length) return;
+            if (ev.ctrlKey && ev.altKey) mode = 'huetemp';
+            else if (ev.ctrlKey) mode = 'colorint';
+            else mode = 'rotate';
             dragging = true; lastX = ev.clientX; lastY = ev.clientY;
             self.camera.detachControl(canvas); // trava a camera durante o arraste da luz
             self._onLightShortcut && self._onLightShortcut('start');
@@ -642,11 +705,22 @@
             lastX = ev.clientX; lastY = ev.clientY;
             var l = self.lightManager.lights[0];
             if (!l) return;
-            // Horizontal muda azimute, vertical muda elevacao.
-            var az = ((l.azimuth + dx * 0.6) % 360 + 360) % 360;
-            var el = Math.max(-89, Math.min(89, l.elevation - dy * 0.5));
-            self.lightManager.update(l.id, 'azimuth', Math.round(az));
-            self.lightManager.update(l.id, 'elevation', Math.round(el));
+
+            if (mode === 'rotate') {
+                var az = ((l.azimuth + dx * 0.6) % 360 + 360) % 360;
+                var el = Math.max(-89, Math.min(89, l.elevation - dy * 0.5));
+                self.lightManager.update(l.id, 'azimuth', Math.round(az));
+                self.lightManager.update(l.id, 'elevation', Math.round(el));
+            } else if (mode === 'colorint') {
+                // Vertical: intensidade. Horizontal: hue da cor.
+                var inten = Math.max(0, Math.min(10, l.intensity - dy * 0.02));
+                self.lightManager.update(l.id, 'intensity', Math.round(inten * 10) / 10);
+                if (Math.abs(dx) > 0) self.lightManager.update(l.id, 'color', _shiftHue(l.color, dx * 1.2));
+            } else if (mode === 'huetemp') {
+                // Horizontal: hue. Vertical: temperatura (cima esquenta).
+                if (Math.abs(dx) > 0) self.lightManager.update(l.id, 'color', _shiftHue(l.color, dx * 1.2));
+                if (Math.abs(dy) > 0) self.lightManager.update(l.id, 'color', _shiftTemp(l.color, -dy * 1.5));
+            }
             if (self._onLightShortcut) self._onLightShortcut('drag', l);
         });
 

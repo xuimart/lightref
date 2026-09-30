@@ -1,99 +1,79 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LightRef</title>
-<link rel="stylesheet" href="index.css">
+<link rel="stylesheet" href="index.css?v=0929161917">
 </head>
 <body>
-<div id="lightref">
-  <div class="lf-panel">
-    <!-- Navegacao principal -->
-    <nav class="lf-mainnav" aria-label="Navegacao">
-      <button data-page="studio" aria-pressed="true">3D</button>
-      <button data-page="library" aria-pressed="false">Biblioteca</button>
-      <button data-page="scenes" aria-pressed="false">Cenas</button>
-    </nav>
-
-    <!-- Topbar: modelo + projecao + ferramentas -->
-    <div class="lf-topbar">
-      <select class="lf-model" id="model-select" aria-label="Modelo"></select>
-      <div class="lf-projection" aria-label="Projecao">
-        <button data-projection="persp" aria-pressed="true">Persp</button>
-        <button data-projection="ortho" aria-pressed="false">Orto</button>
-      </div>
-      <div class="lf-filetools">
-        <button data-action="save" title="Salvar cena" aria-label="Salvar cena">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
-        </button>
-        <button data-action="import" title="Importar modelo" aria-label="Importar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg>
-        </button>
-        <button data-action="reset" title="Restaurar" aria-label="Restaurar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3"/><path d="M3 3v5h5"/></svg>
-        </button>
-      </div>
+<div id="lr04" aria-label="LightRef â€” layout ajustado pelas referências">
+ <div class="lr04-window">
+  <div class="lr04-studio">
+   <div class="lr04-viewport" aria-label="Prévia ilustrativa da cena">
+    <div id="lf-checker"></div><canvas id="gl-canvas" aria-label="Visor 3D. Arraste para girar."></canvas>
+    <div class="lr04-toptools" aria-label="Ferramentas do visor">
+     <button data-action="reset-view" aria-label="Resetar visão" data-tooltip="Resetar visão"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button>
+     <button data-toggle="floor" aria-pressed="true" aria-label="Chão" data-tooltip="Chão"><i data-lucide="mountain" aria-hidden="true"></i></button>
+     <button data-toggle="guides" aria-pressed="true" aria-label="Guias das luzes" data-tooltip="Guias das luzes"><i data-lucide="crosshair" aria-hidden="true"></i></button>
+     <button data-toggle="reference" aria-pressed="false" aria-label="Modo referência" data-tooltip="Modo referência"><i data-lucide="eye" aria-hidden="true"></i></button>
     </div>
-
-    <!-- Stage (viewport 3D) -->
-    <div class="lf-stage">
-      <div id="lf-checker"></div>
-      <canvas id="gl-canvas" aria-label="Visor 3D. Arraste para girar."></canvas>
-      <div class="lf-viewtools">
-        <button data-action="camera" title="Resetar camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3"/><path d="M3 3v5h5"/></svg></button>
-        <button data-action="floor" aria-pressed="true" title="Chao/sombra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18h18"/><path d="M6 18l3-9 3 6 2-4 4 7"/></svg></button>
-        <button data-action="guides" aria-pressed="true" title="Guias de luz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
-        <button data-action="reference" aria-pressed="false" title="Modo referencia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
-      </div>
-      <button class="lf-help" data-action="help" title="Ajuda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></button>
-      <div id="loading-overlay" class="loading-overlay" style="display:none;"><div class="spinner"></div><div class="loading-text"><span>Carregando</span> <span id="loading-pct">0%</span></div></div>
+    <div class="lr04-sidetools" aria-label="Filtros rápidos">
+     <div class="lr04-quickrow"><button data-toggle="poster" aria-pressed="false" aria-label="Posterizar" data-tooltip="Posterizar"><i data-lucide="chart-no-axes-column" aria-hidden="true"></i></button><label class="lr04-quickslider" data-filter-controls="poster" hidden><input data-key="levels" type="range" min="2" max="12" value="4" aria-label="Níveis de posterização"><output>4</output></label></div>
+     <div class="lr04-quickrow"><button data-toggle="cutout" aria-pressed="false" aria-label="Cutout" data-tooltip="Cutout"><i data-lucide="move-horizontal" aria-hidden="true"></i></button><label class="lr04-quickslider" data-filter-controls="cutout" hidden><input data-key="steps" type="range" min="2" max="12" value="4" aria-label="Degraus do cutout"><output>4</output></label></div>
+     <button data-toggle="gray" aria-pressed="false" aria-label="Preto e branco" data-tooltip="Preto e branco"><i data-lucide="contrast" aria-hidden="true"></i></button>
     </div>
-
-    <!-- Tray de propriedades: abas Forma/Luz/Lente + tools -->
-    <section class="lf-tray" aria-label="Propriedades">
-      <div class="lf-traybar">
-        <button class="lf-collapse" data-action="collapse" aria-expanded="true" title="Recolher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg></button>
-        <nav class="lf-tabs" aria-label="Controles">
-          <button data-tab="form" aria-pressed="true">Forma</button>
-          <button data-tab="light" aria-pressed="false">Luz</button>
-          <button data-tab="lens" aria-pressed="false">Lente</button>
-          <button data-tab="adjust" aria-pressed="false">Ajustes</button>
-          <button data-tab="pos" aria-pressed="false">Posicao</button>
-        </nav>
-        <div class="lf-traytools">
-          <button data-action="photoshop-menu" title="Jogar no Photoshop" class="lf-ps-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
-        </div>
-      </div>
-      <div class="lf-controls" id="lf-controls"></div>
+    <button class="lr04-material-toggle" data-toggle="materialOpen" aria-expanded="false" aria-pressed="false" aria-label="Abrir materiais" data-tooltip="Material da forma"><i data-lucide="circle" aria-hidden="true"></i></button>
+    <section class="lr04-material" aria-label="Material da forma" hidden>
+     <div class="lr04-materialhead"><label for="lr04-material-select">Material</label><select id="lr04-material-select" data-setting="material"></select><input type="color" data-setting="formColor" value="#b5b1ad" aria-label="Cor do material"></div>
+     <div class="lr04-material-fields"></div>
+     <label class="lr04-scatter">Cor scatter<input type="color" data-setting="scatter" value="#050608" aria-label="Cor scatter"></label>
+     <label class="lr04-scatter">Fundo<span style="display:flex;align-items:center;gap:8px"><label class="lr04-check" style="gap:5px"><input type="checkbox" id="bg-transp"> Transparente</label><input type="color" id="bg-color" value="#3a4a6a" aria-label="Cor do fundo"></span></label>
     </section>
-
-    <!-- Pagina Biblioteca/Cenas (catalogo) -->
-    <section class="lf-catalog" id="lf-catalog" aria-label="Catalogo" hidden></section>
-
-    <div class="lf-feedback" id="status-msg" aria-live="polite">LightRef v0.4</div>
-
-    <!-- Dialogo (ajustes / onboarding) -->
-    <div class="lf-dialog" id="lf-dialog" role="dialog" aria-modal="true" hidden>
-      <div class="lf-dialogcard">
-        <header><strong id="lf-dialog-title"></strong><button data-action="close" title="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
-        <div class="lf-dialogbody" id="lf-dialog-body"></div>
-      </div>
+    <output class="lr04-notice" aria-live="polite"></output>
+    <div id="loading-overlay" class="loading-overlay" style="display:none;"><div class="spinner"></div><div class="loading-text"><span>Carregando</span> <span id="loading-pct">0%</span></div></div>
+   </div>
+   <div class="lr04-middle">
+    <button class="lr04-fold" data-action="collapse" aria-label="Recolher controles" aria-expanded="true"><i data-lucide="chevron-down" aria-hidden="true"></i></button>
+    <nav class="lr04-tabs" aria-label="Propriedades da cena">
+     <button data-tab="light" aria-pressed="true" aria-controls="lr04-pane-light">Luz</button><button data-tab="lens" aria-pressed="false" aria-controls="lr04-pane-lens">Lente</button><button data-tab="adjust" aria-pressed="false" aria-controls="lr04-pane-adjust">Ajustes</button><button data-tab="position" aria-pressed="false" aria-controls="lr04-pane-position">Posição</button><button data-tab="composition" aria-pressed="false" aria-controls="lr04-pane-composition">Composição</button>
+    </nav>
+    <div class="lr04-sceneactions">
+     <button class="lr04-export" data-action="export" aria-label="Jogar no Photoshop" data-tooltip="Jogar no Photoshop"><i data-lucide="layers" aria-hidden="true"></i></button>
+     <select data-setting="model" id="model-select" aria-label="Modelo da cena"></select>
+     <div class="lr04-projection" aria-label="Projeção"><button data-projection="persp" aria-pressed="true">Persp</button><button data-projection="ortho" aria-pressed="false">Orto</button></div>
+     <div class="lr04-filetools"><button data-action="save" aria-label="Salvar cena" data-tooltip="Salvar cena"><i data-lucide="save" aria-hidden="true"></i></button><button data-action="import" aria-label="Importar modelo" data-tooltip="Importar modelo"><i data-lucide="upload" aria-hidden="true"></i></button><button data-action="reset" aria-label="Resetar cena" data-tooltip="Resetar cena"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button></div>
     </div>
+   </div>
+   <div class="lr04-inspector">
+    <section id="lr04-pane-light" data-pane="light" aria-label="Luz"><div class="lr04-lightchips"></div><div class="lr04-lightbody"><label class="lr04-lightcolor"><input data-setting="lightColor" id="l-color" type="color" value="#f4f4f2" aria-label="Cor da luz"><span>Cor</span></label><div class="lr04-lightfields"></div></div></section>
+    <section id="lr04-pane-lens" data-pane="lens" aria-label="Lente" hidden><div class="lr04-columns"><div><div class="lr04-lensfields"></div><div class="lr04-envwrap"></div></div><div><span class="lr04-heading">Enquadramento</span><div class="lr04-views"><button data-view="front">Frente</button><button data-view="three">3/4</button><button data-view="profile">Perfil</button><button data-view="top">Topo</button></div><button class="lr04-widebutton" data-action="reset-view">Resetar câmera</button></div></div></section>
+    <section id="lr04-pane-adjust" data-pane="adjust" aria-label="Ajustes" hidden><div class="lr04-columns"><div class="lr04-tonalfields"></div><div><label class="lr04-check"><input type="checkbox" data-setting="poster">Posterizar</label><div class="lr04-levelsfield"></div><label class="lr04-check"><input type="checkbox" data-setting="cutout">Cutout</label><div class="lr04-stepsfield"></div><div class="lr04-adjustbottom"><label class="lr04-check"><input type="checkbox" data-setting="gray">Preto e branco</label><button data-action="reset-adjust">Zerar ajustes</button></div></div></div></section>
+    <section id="lr04-pane-position" data-pane="position" aria-label="Posição" hidden><div class="lr04-columns"><div><div class="lr04-gizmoline"><span class="lr04-heading">Gizmo no visor</span><div class="lr04-modes"><button data-gizmo="rotate" aria-pressed="false">Rotacionar</button><button data-gizmo="move" aria-pressed="false">Mover</button><button data-gizmo="off" aria-pressed="true">Desligar</button></div></div><span class="lr04-heading">Ajuste por sliders</span><div class="lr04-positionleft"></div></div><div class="lr04-positionright"></div></div></section>
+    <section id="lr04-pane-composition" data-pane="composition" aria-label="Composição" hidden><div class="lr04-composition"><div><span class="lr04-heading">Gizmo (objeto selecionado)</span><div class="lr04-modes lr04-vertical"><button data-gizmo="rotate" aria-pressed="false">Rotacionar</button><button data-gizmo="move" aria-pressed="false">Mover</button><button data-gizmo="off" aria-pressed="true">Desligar</button></div></div><div><span class="lr04-heading">Adicionar forma / modelo</span><label class="lr04-addrow">Objeto<select class="lr04-addtype"></select></label><button class="lr04-widebutton" data-action="add-object">+ Adicionar à cena</button></div><div><span class="lr04-heading lr04-objectcount">Objetos na cena (1)</span><div class="lr04-objectlist"></div></div></div></section>
+   </div>
   </div>
+  <section class="lr04-catalog" aria-label="Biblioteca e cenas" hidden></section>
+  <footer class="lr04-footer"><span class="lr04-brand">LightRef</span><nav aria-label="Navegação principal"><button data-page="studio" aria-pressed="true">3D</button><button data-page="library" aria-pressed="false">Biblioteca</button><button data-page="scenes" aria-pressed="false">Cenas</button></nav><button data-action="collapse" aria-label="Recolher painel" aria-expanded="true"><i data-lucide="chevron-down" aria-hidden="true"></i></button></footer>
+  <div class="lr04-modal" role="dialog" aria-modal="true" aria-labelledby="lr04-modal-title" hidden><div class="lr04-modalcard"><header><strong id="lr04-modal-title"></strong><button data-action="close" aria-label="Fechar"><i data-lucide="x" aria-hidden="true"></i></button></header><div class="lr04-modalbody"></div></div></div>
+ </div>
 </div>
 
 <input type="file" id="file-input" accept=".obj,.glb,.gltf,.stl" style="display:none;">
 
+<script src="js/diag.js"></script>
 <script src="js/vendor/babylon.js"></script>
 <script src="js/vendor/babylonjs.loaders.min.js"></script>
-<script src="js/CSInterface.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/lights.js"></script>
-<script src="js/postfx.js"></script>
-<script src="js/scene.js"></script>
-<script src="js/to-photoshop.js"></script>
-<script src="js/update.js"></script>
-<script src="js/panel.js"></script>
+<script src="js/vendor/lucide.min.js"></script>
+<script src="js/CSInterface.js?v=0929161917"></script>
+<script src="js/storage.js?v=0929161917"></script>
+<script src="js/lights.js?v=0929161917"></script>
+<script src="js/postfx.js?v=0929161917"></script>
+<script src="js/scene.js?v=0929161917"></script>
+<script src="js/to-photoshop.js?v=0929161917"></script>
+<script src="js/update.js?v=0929161917"></script>
+<script src="js/panel.js?v=0929161917"></script>
 </body>
 </html>
+
+
