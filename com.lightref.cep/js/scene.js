@@ -707,7 +707,7 @@
             if (!dragging) return;
             var dx = ev.clientX - lastX, dy = ev.clientY - lastY;
             lastX = ev.clientX; lastY = ev.clientY;
-            var l = self.lightManager.lights[0];
+            var l = self._activeLightObj();
             if (!l) return;
 
             if (mode === 'rotate') {
@@ -735,6 +735,19 @@
             if (self._onLightShortcut) self._onLightShortcut('end');
         });
     };
+    // Luz ATIVA (selecionada no painel): os atalhos de arraste agem sobre ela.
+    Scene.prototype.setActiveLight = function (id) { this._activeLightId = id; };
+    Scene.prototype.getActiveLight = function () { return this._activeLightId; };
+    // Resolve o objeto da luz ativa; se nenhuma, cai na primeira da lista.
+    Scene.prototype._activeLightObj = function () {
+        if (!this.lightManager || !this.lightManager.lights.length) return null;
+        if (this._activeLightId != null && this.lightManager.get) {
+            var a = this.lightManager.get(this._activeLightId);
+            if (a) return a;
+        }
+        return this.lightManager.lights[0];
+    };
+
     Scene.prototype.onLightShortcut = function (cb) { this._onLightShortcut = cb; };
 
     // ============================================================

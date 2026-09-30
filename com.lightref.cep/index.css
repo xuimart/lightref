@@ -93,3 +93,6 @@ body { display: flex; }
 /* Modo referencia (olho): visor cheio, esconde toda a UI de baixo. */
 #lr04 .lr04-reference .lr04-middle,#lr04 .lr04-reference .lr04-footer{display:none}
 #lr04 .lr04-reference .lr04-notice{display:none}
+
+/* Composicao ocultada (feature desativada na UI) */
+#lr04 .lr04-tabs button[data-tab="composition"]{display:none}

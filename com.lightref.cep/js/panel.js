@@ -683,6 +683,7 @@
                 row('Profundidade','sl-offz',-3,3,0.02, fx2(off.z), '') +
                 row('Escala','sl-mscale',0.2,3,0.02, fx2(sc), 'x') +
                 row('Inclinar Z','sl-roll',-180,180,1, roll, '\u00b0') +
+                '<button id="save-position" class="lr04-widebutton">Salvar posicao do modelo</button>' +
                 '<button id="reset-transform" class="lr04-widebutton">Centralizar / resetar</button>' +
                 '<div class="lr04-hint" style="font-size:10px;color:#8f9198;margin-top:8px;line-height:1.5">Atalhos: G mover, S escala, R rotacao (RR livre). X/Y/Z travam eixo, clique confirma, Esc cancela.</div>';
             wireRanges(right);
@@ -692,6 +693,11 @@
                 scene.setModelScaleMult(1); scene.setModelRoll(0); scene.setModelRotation(0, 0);
                 saveModelXform();
                 renderTab();
+            };
+            var sp = $('#save-position');
+            if (sp) sp.onclick = function () {
+                saveModelXform();
+                feedback('Posicao do modelo salva');
             };
         }
         // Gizmo do pane Posicao (atua no modelo principal).
