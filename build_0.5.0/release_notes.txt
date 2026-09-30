@@ -1,0 +1,10 @@
+﻿LightRef v0.5.0
+
+Novidades desta versao:
+- Biblioteca reorganizada em categorias com gavetas (accordion), card "Adicionar modelo", deletar modelos importados e arrastar modelos entre categorias.
+- Cenas salvas no mesmo estilo da biblioteca: categorias, gavetas, deletar com confirmacao e arrastar cenas entre categorias.
+- Salvar cena agora guarda o estado completo (modelo, posicao/rotacao/escala, luzes, material, fundo, HDR, pos-processamento e camera) e carregar restaura tudo.
+- Miniaturas dos modelos padronizadas (frente, luz uniforme, retrato) e miniatura de cena em alta qualidade sem distorcao.
+- Correcoes de iluminacao e sombra (CESM), atalhos de luz por arraste e ajustes na composicao.
+
+Instalacao: baixe e execute LightRef_Setup.exe (pede permissao de administrador). Depois abra o Photoshop em Janela > Extensoes > LightRef.
