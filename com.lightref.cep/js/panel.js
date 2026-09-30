@@ -864,52 +864,312 @@
         var cat = $('.lr04-catalog'); if (cat) cat.hidden = isStudio;
         if (!isStudio) renderCatalog(page); else setTimeout(function(){ if (scene) scene.engine.resize(); }, 80);
     }
-    function renderCatalog(page) {
-        var cat = $('.lr04-catalog');
-        if (page === 'library') {
-            var icon = '<div class="lr04-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg></div>';
-            var thumbs = {}; try { thumbs = LightRefStorage.readConfig().modelThumbs || {}; } catch (e) {}
-            // Thumbs padronizadas (geradas offline) existem para os modelos padrao
-            // (MODELS) e formas (SHAPES). Monta o set de URLs que TEM PNG fixo.
-            var fixedSet = {};
-            MODELS.forEach(function(m){ fixedSet[m.v] = 1; });
-            if (typeof SHAPES !== 'undefined') SHAPES.forEach(function(sh){ fixedSet[sh.v] = 1; });
-            function fileBase(url){ var m = /([^\/]+)\.(obj|stl|glb|gltf)$/i.exec(url || ''); return m ? m[1] : null; }
-            function fixedThumb(url) {
-                if (!fixedSet[url]) return null;
-                var base = fileBase(url);
-                return base ? 'models/thumbs/' + base + '.png' : null;
-            }
-            function preview(url) {
-                // Override salvo pelo usuario (ao 'Salvar posicao') tem prioridade.
-                if (thumbs[url]) return '<img src="'+thumbs[url]+'" loading="lazy">';
-                var ft = fixedThumb(url);
-                if (ft) return '<img src="'+ft+'" loading="lazy">';
-                return icon;
-            }
-            function cardFor(url, title, tag) { return '<button class="lr04-card" data-defurl="'+url+'">'+preview(url)+'<strong>'+title+'</strong><small>'+(tag||'')+'</small></button>'; }
-            var allDef = MODELS.slice();
-            if (typeof SHAPES !== 'undefined') { SHAPES.forEach(function(s){ allDef.push({v:s.v, t:s.t, cat:'Formas basicas'}); }); }
-            var order = ['Cabecas','Bustos e Torsos','Figuras','Formas basicas','Outros'];
-            var byCat = {}; allDef.forEach(function(m){ var c=m.cat||'Outros'; (byCat[c]=byCat[c]||[]).push(m); });
-            var html = '';
-            order.forEach(function(c){ if (!byCat[c]) return; var cards = byCat[c].map(function(m){ return cardFor(m.v, m.t, c); }).join(''); html += '<h3'+(html?' style="margin-top:16px"':'')+'>'+c+'</h3><div class="lr04-gallery">'+cards+'</div>'; });
-            var mine; try { mine = LightRefStorage.listModels(); } catch (e) { mine = []; }
-            var myCards = mine.map(function (m) { var u = LightRefStorage.modelFileURL(m); return '<button class="lr04-card" data-model="'+m.id+'">'+preview(u)+'<strong>'+m.name+'</strong><small>Meu ('+(m.ext||'').replace('.','')+')</small></button>'; }).join('');
-            cat.innerHTML = html +
-                            '<h3 style="margin-top:16px">Meus modelos</h3>' + (myCards ? '<div class="lr04-gallery">'+myCards+'</div>' : '<p>Nenhum importado. Use Importar no topo.</p>');
-            refreshIcons();
-            $all('.lr04-catalog [data-defurl]').forEach(function (b) { b.onclick = function () { var u=this.getAttribute('data-defurl'); var ms=$('#model-select'); if (ms) ms.value=u; loadModel(u); backToStudio(); }; });
-            $all('.lr04-catalog [data-model]').forEach(function (b) { b.onclick = function () { var id=parseInt(this.getAttribute('data-model'),10); var models=LightRefStorage.listModels(); for (var i=0;i<models.length;i++) if (models[i].id===id) { loadModel(LightRefStorage.modelFileURL(models[i])); backToStudio(); } }; });
-        } else if (page === 'scenes') {
-            var scenes; try { scenes = LightRefStorage.listScenes(); } catch (e) { scenes = []; }
-            var cards = scenes.map(function (s) { return '<button class="lr04-card" data-scene="'+s.id+'">'+(s.thumb?'<img src="'+s.thumb+'">':'<div class="lr04-placeholder"></div>')+'<strong>'+s.name+'</strong></button>'; }).join('');
-            var saveBtn = '<button id="scene-save-btn" class="lr04-widebutton">+ Salvar cena atual</button>';
-            cat.innerHTML = '<h3>Cenas salvas</h3>' + saveBtn + (cards ? '<div class="lr04-gallery">'+cards+'</div>' : '<p>Nenhuma cena salva. Clique em Salvar cena atual.</p>');
-            var sb = $('#scene-save-btn'); if (sb) sb.onclick = saveScenePrompt;
-            $all('.lr04-catalog [data-scene]').forEach(function (b) { b.onclick = function () { var id=parseInt(this.getAttribute('data-scene'),10); var scenes2=LightRefStorage.listScenes(); for (var i=0;i<scenes2.length;i++) if (scenes2[i].id===id) { applyScene(scenes2[i].state); backToStudio(); } }; });
-        }
+    // ---------- Catalogo (gavetas) ----------
+    // renderCatalog e um dispatcher fino: monta o CatalogModel via adaptador de
+    // dominio (buildLibraryModel/buildScenesModel) e delega ao render generico
+    // renderDrawers. Biblioteca e Cenas compartilham drawerHTML/cardHTML e os
+    // handlers de accordion.
+    //
+    // As funcoes puras de dominio (defaultCatOf/categoryExists/resolveModelCategory
+    // e os construtores de descritor/HTML) sao expostas em window.__lrCatalogApi
+    // para os testes em Node (Property 1/2 e smoke), analogo a __lrStateApi.
+
+    // Categorias padrao dos modelos (Req 4.6). Ordem fixa de exibicao.
+    var LIBRARY_DEFAULT_CATS = ['Cabecas', 'Bustos e Torsos', 'Figuras', 'Formas basicas'];
+    var CAT_OUTROS = 'Outros';
+    var CAT_SEM = 'Sem categoria';
+
+    // Categoria padrao (do codigo) de um item da Biblioteca. itemKey e a url
+    // ('models/asaro.obj') para modelo padrao, ou 'my:<id>' para importado.
+    // Importados nao tem categoria padrao => null.
+    function defaultCatOf(itemKey) {
+        if (itemKey == null) return null;
+        var key = String(itemKey);
+        if (key.indexOf('my:') === 0) return null;
+        for (var i = 0; i < MODELS.length; i++) if (MODELS[i].v === key) return MODELS[i].cat || null;
+        if (typeof SHAPES !== 'undefined') { for (var j = 0; j < SHAPES.length; j++) if (SHAPES[j].v === key) return 'Formas basicas'; }
+        return null;
     }
+
+    // Uma categoria "existe" se for uma das padrao ou uma custom em modelCategories.
+    function categoryExists(name, cfg) {
+        if (name == null || name === '') return false;
+        for (var i = 0; i < LIBRARY_DEFAULT_CATS.length; i++) if (LIBRARY_DEFAULT_CATS[i] === name) return true;
+        var custom = (cfg && cfg.modelCategories) || [];
+        for (var j = 0; j < custom.length; j++) if (custom[j] === name) return true;
+        return false;
+    }
+
+    // Precedencia: override (se valido) > categoria padrao > 'Outros' (Req 4.5).
+    function resolveModelCategory(itemKey, cfg) {
+        var ov = (cfg && cfg.modelCatOverrides) ? cfg.modelCatOverrides[itemKey] : null;
+        if (ov && categoryExists(ov, cfg)) return ov;
+        var def = defaultCatOf(itemKey);
+        if (def) return def;
+        return CAT_OUTROS;
+    }
+
+    // ----- Thumbnails (reaproveita override > thumb fixa > icone) -----
+    function catalogIcon() {
+        return '<div class="lr04-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg></div>';
+    }
+    function fileBaseName(url) { var m = /([^\/]+)\.(obj|stl|glb|gltf)$/i.exec(url || ''); return m ? m[1] : null; }
+    function hasFixedThumb(url) {
+        for (var i = 0; i < MODELS.length; i++) if (MODELS[i].v === url) return true;
+        if (typeof SHAPES !== 'undefined') { for (var j = 0; j < SHAPES.length; j++) if (SHAPES[j].v === url) return true; }
+        return false;
+    }
+    function previewHTML(url, thumbs) {
+        if (thumbs && thumbs[url]) return '<img src="' + thumbs[url] + '" loading="lazy">';
+        if (hasFixedThumb(url)) { var base = fileBaseName(url); if (base) return '<img src="models/thumbs/' + base + '.png" loading="lazy">'; }
+        return catalogIcon();
+    }
+
+    // ----- Adaptador: Biblioteca -----
+    function buildLibraryModel() {
+        var cfg = {}; try { cfg = LightRefStorage.readConfig() || {}; } catch (e) { cfg = {}; }
+        var thumbs = cfg.modelThumbs || {};
+        var customCats = cfg.modelCategories || [];
+        var drawer = (cfg.drawerState && cfg.drawerState.library) || {};
+
+        function expandedOf(catId) { return (drawer[catId] === false) ? false : true; }
+
+        // Agrupa itens por categoria resolvida.
+        var byCat = {};
+        function push(catId, item) { (byCat[catId] = byCat[catId] || []).push(item); }
+
+        // Modelos padrao (MODELS).
+        MODELS.forEach(function (m) {
+            var c = resolveModelCategory(m.v, cfg);
+            push(c, {
+                id: m.v, kind: 'defmodel', title: m.t, subtitle: c, url: m.v,
+                thumbHTML: previewHTML(m.v, thumbs), deletable: itemDeletable('defmodel'), draggable: true, fromCat: c
+            });
+        });
+        // Formas basicas (SHAPES) -> categoria padrao 'Formas basicas'.
+        if (typeof SHAPES !== 'undefined') {
+            SHAPES.forEach(function (s) {
+                var c = resolveModelCategory(s.v, cfg);
+                push(c, {
+                    id: s.v, kind: 'defmodel', title: s.t, subtitle: c, url: s.v,
+                    thumbHTML: previewHTML(s.v, thumbs), deletable: itemDeletable('defmodel'), draggable: true, fromCat: c
+                });
+            });
+        }
+        // Modelos importados.
+        var mine = []; try { mine = LightRefStorage.listModels(); } catch (e) { mine = []; }
+        mine.forEach(function (m) {
+            var key = 'my:' + m.id;
+            var c = resolveModelCategory(key, cfg);
+            var u = LightRefStorage.modelFileURL(m);
+            push(c, {
+                id: m.id, kind: 'mymodel', title: m.name, subtitle: 'Meu (' + (m.ext || '').replace('.', '') + ')',
+                url: u, thumbHTML: previewHTML(u, thumbs), deletable: itemDeletable('mymodel'), draggable: true, fromCat: c
+            });
+        });
+
+        // Ordem: padrao + custom (na ordem de modelCategories) + 'Outros' (se tiver item).
+        var order = [];
+        LIBRARY_DEFAULT_CATS.forEach(function (c) { order.push(c); });
+        customCats.forEach(function (c) { if (order.indexOf(c) < 0) order.push(c); });
+        if (byCat[CAT_OUTROS] && byCat[CAT_OUTROS].length) order.push(CAT_OUTROS);
+
+        var categories = [];
+        order.forEach(function (c) {
+            var renamable = (LIBRARY_DEFAULT_CATS.indexOf(c) < 0) && (c !== CAT_OUTROS);
+            categories.push({
+                id: c, name: c, builtin: !renamable, renamable: renamable,
+                expanded: expandedOf(c), items: byCat[c] || []
+            });
+        });
+
+        return { page: 'library', categories: categories, canCreateCategory: true, canImport: true, emptyHint: '' };
+    }
+
+    // ----- Adaptador: Cenas -----
+    function buildScenesModel() {
+        var cfg = {}; try { cfg = LightRefStorage.readConfig() || {}; } catch (e) { cfg = {}; }
+        var sceneCats = cfg.sceneCategories || [];
+        var drawer = (cfg.drawerState && cfg.drawerState.scenes) || {};
+        function expandedOf(catId) { return (drawer[catId] === false) ? false : true; }
+
+        var scenes = []; try { scenes = LightRefStorage.listScenes(); } catch (e) { scenes = []; }
+
+        function sceneCatExists(name) { for (var i = 0; i < sceneCats.length; i++) if (sceneCats[i] === name) return true; return false; }
+
+        var byCat = {};
+        function push(catId, item) { (byCat[catId] = byCat[catId] || []).push(item); }
+        scenes.forEach(function (s) {
+            var c = (s.categoryId && sceneCatExists(s.categoryId)) ? s.categoryId : CAT_SEM;
+            push(c, {
+                id: s.id, kind: 'scene', title: s.name, subtitle: '',
+                thumbHTML: s.thumb ? ('<img src="' + s.thumb + '">') : '<div class="lr04-placeholder"></div>',
+                deletable: itemDeletable('scene'), draggable: true, fromCat: c
+            });
+        });
+
+        var order = [];
+        sceneCats.forEach(function (c) { if (order.indexOf(c) < 0) order.push(c); });
+        if (byCat[CAT_SEM] && byCat[CAT_SEM].length) order.push(CAT_SEM);
+
+        var categories = [];
+        order.forEach(function (c) {
+            var renamable = (c !== CAT_SEM);
+            categories.push({
+                id: c, name: c, builtin: !renamable, renamable: renamable,
+                expanded: expandedOf(c), items: byCat[c] || []
+            });
+        });
+
+        return {
+            page: 'scenes', categories: categories, canCreateCategory: true, canImport: false,
+            emptyHint: scenes.length ? '' : 'Nenhuma cena salva. Clique em Salvar cena atual.'
+        };
+    }
+
+    // Regra unica de deletabilidade: somente importados e cenas sao deletaveis
+    // (Req 1.1/1.2/11.1). Usada pelos adaptadores ao montar cada ItemDesc.
+    function itemDeletable(kind) { return kind === 'mymodel' || kind === 'scene'; }
+
+    // ----- Render generico (HTML) -----
+    function cardHTML(item) {
+        var del = item.deletable ? '<span class="lr04-card-del" data-action="del" title="Excluir">x</span>' : '';
+        return '<button class="lr04-card" draggable="' + (item.draggable ? 'true' : 'false') + '"' +
+            ' data-kind="' + item.kind + '" data-id="' + item.id + '" data-cat="' + item.fromCat + '">' +
+            del + item.thumbHTML + '<strong>' + item.title + '</strong>' +
+            (item.subtitle ? ('<small>' + item.subtitle + '</small>') : '') + '</button>';
+    }
+    function addCardHTML() {
+        return '<button class="lr04-card lr04-card-add" data-action="add-model" title="Adicionar modelo">' +
+            '<span class="lr04-plus">+</span><strong>Adicionar</strong></button>';
+    }
+    function drawerHTML(cat, canImport) {
+        var count = cat.items.length;
+        var cards = cat.items.map(function (it) { return cardHTML(it); }).join('');
+        if (canImport) cards += addCardHTML();
+        var tools = cat.renamable ? '<span class="lr04-drawertools"><button data-action="rename-cat" data-cat="' + cat.id + '" title="Renomear">Renomear</button></span>' : '';
+        return '<section class="lr04-drawer" data-cat="' + cat.id + '" aria-expanded="' + (cat.expanded ? 'true' : 'false') + '">' +
+            '<header class="lr04-drawerhead" tabindex="0">' +
+            '<button class="lr04-drawertoggle" type="button"><span class="lr04-arrow">&#9656;</span> ' + cat.name + ' (' + count + ')</button>' + tools +
+            '</header>' +
+            '<div class="lr04-drawerbody lr04-gallery"' + (cat.expanded ? '' : ' hidden') + '>' + cards + '</div>' +
+            '</section>';
+    }
+    function catalogToolbarHTML(model) {
+        var html = '<div class="lr04-drawertools-top">';
+        if (model.canCreateCategory) html += '<button class="lr04-widebutton" data-action="new-cat">+ Nova categoria</button>';
+        if (model.page === 'scenes') html += '<button id="scene-save-btn" class="lr04-widebutton" data-action="save-scene">+ Salvar cena atual</button>';
+        html += '</div>';
+        return html;
+    }
+    // Monta todo o HTML do catalogo (toolbar + gavetas). Funcao pura (testavel).
+    function catalogHTML(model) {
+        var html = catalogToolbarHTML(model);
+        if (model.categories.length === 0 && model.emptyHint) {
+            html += '<p class="lr04-emptyhint">' + model.emptyHint + '</p>';
+            return html;
+        }
+        model.categories.forEach(function (cat) { html += drawerHTML(cat, model.canImport); });
+        return html;
+    }
+
+    // ----- Render generico (DOM + handlers) -----
+    function renderDrawers(model) {
+        var cat = $('.lr04-catalog'); if (!cat) return;
+        cat.innerHTML = catalogHTML(model);
+        refreshIcons();
+        bindDrawerHandlers(model);
+        bindCardOpenHandlers(model);
+        bindCatalogTopActions(model);
+    }
+
+    // Accordion: clique/Enter/Space no cabecalho alterna a gaveta e persiste. (Req 5/10)
+    function bindDrawerHandlers(model) {
+        $all('.lr04-catalog .lr04-drawer').forEach(function (drawer) {
+            var head = drawer.querySelector('.lr04-drawerhead');
+            if (!head) return;
+            function toggle() {
+                var expanded = drawer.getAttribute('aria-expanded') !== 'true' ? true : false;
+                // aria-expanded true -> recolher; false/ausente -> expandir.
+                var isOpen = drawer.getAttribute('aria-expanded') === 'true';
+                var next = !isOpen;
+                drawer.setAttribute('aria-expanded', next ? 'true' : 'false');
+                var body = drawer.querySelector('.lr04-drawerbody');
+                if (body) { if (next) body.removeAttribute('hidden'); else body.setAttribute('hidden', 'hidden'); }
+                var catId = drawer.getAttribute('data-cat');
+                try { LightRefStorage.setDrawerState(model.page, catId, next); } catch (e) {}
+            }
+            head.onclick = function (ev) {
+                // Nao alternar quando o clique for num botao de ferramenta (renomear).
+                var t = ev.target;
+                if (t && t.getAttribute && t.getAttribute('data-action') === 'rename-cat') return;
+                toggle();
+            };
+            head.onkeydown = function (ev) {
+                if (ev.key === 'Enter' || ev.key === ' ' || ev.keyCode === 13 || ev.keyCode === 32) {
+                    ev.preventDefault(); toggle();
+                }
+            };
+        });
+    }
+
+    // Abrir item: clicar card de modelo carrega o modelo; card de cena aplica a
+    // cena. (Delete/DnD/importar/categorias entram nas Etapas 4/5.)
+    function bindCardOpenHandlers(model) {
+        $all('.lr04-catalog .lr04-drawerbody .lr04-card').forEach(function (b) {
+            if (b.getAttribute('data-action') === 'add-model') return; // card "+" tratado em top actions
+            b.onclick = function (ev) {
+                // Clique no "x" (delete) sera tratado nas proximas etapas; por ora ignora.
+                var t = ev.target;
+                if (t && t.getAttribute && t.getAttribute('data-action') === 'del') { ev.stopPropagation(); return; }
+                var kind = this.getAttribute('data-kind');
+                var id = this.getAttribute('data-id');
+                if (kind === 'defmodel') {
+                    var ms = $('#model-select'); if (ms) ms.value = id;
+                    loadModel(id); backToStudio();
+                } else if (kind === 'mymodel') {
+                    var mid = parseInt(id, 10);
+                    var models = LightRefStorage.listModels();
+                    for (var i = 0; i < models.length; i++) if (models[i].id === mid) { loadModel(LightRefStorage.modelFileURL(models[i])); backToStudio(); return; }
+                } else if (kind === 'scene') {
+                    var sid = parseInt(id, 10);
+                    var scenes = LightRefStorage.listScenes();
+                    for (var j = 0; j < scenes.length; j++) if (scenes[j].id === sid) { applyScene(scenes[j].state); backToStudio(); return; }
+                }
+            };
+        });
+    }
+
+    // Acoes de topo: por ora liga "Salvar cena atual" (Cenas). "Nova categoria",
+    // card "+" e renomear entram nas Etapas 4. Deixamos os hooks prontos.
+    function bindCatalogTopActions(model) {
+        var sb = $('#scene-save-btn'); if (sb) sb.onclick = saveScenePrompt;
+    }
+
+    function renderCatalog(page) {
+        var model = (page === 'library') ? buildLibraryModel() : buildScenesModel();
+        renderDrawers(model);
+    }
+
+    // Exposto para testes em Node (Property 1/2 e smoke da renderizacao). So
+    // quando ha 'window'. As funcoes puras nao dependem de DOM.
+    try {
+        if (typeof window !== 'undefined' && window) {
+            window.__lrCatalogApi = {
+                defaultCatOf: defaultCatOf,
+                categoryExists: categoryExists,
+                resolveModelCategory: resolveModelCategory,
+                itemDeletable: itemDeletable,
+                cardHTML: cardHTML,
+                addCardHTML: addCardHTML,
+                drawerHTML: drawerHTML,
+                catalogToolbarHTML: catalogToolbarHTML,
+                catalogHTML: catalogHTML,
+                MODELS: MODELS,
+                SHAPES: (typeof SHAPES !== 'undefined') ? SHAPES : []
+            };
+        }
+    } catch (e) {}
     function backToStudio() {
         currentPage = 'studio';
         $all('.lr04-footer nav button[data-page]').forEach(function (x){ x.setAttribute('aria-pressed', String(x.getAttribute('data-page')==='studio')); });

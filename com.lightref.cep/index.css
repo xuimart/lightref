@@ -105,3 +105,26 @@ body { display: flex; }
 #lr04 .lr04-gallery button strong{font-size:11px;margin-top:5px;text-align:center;line-height:1.2}
 /* 2 colunas em telas bem estreitas */
 @media (max-width:520px){#lr04 .lr04-gallery{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}
+
+/* ---------- Catalogo: gavetas (accordion) e cards especiais ---------- */
+#lr04 .lr04-drawertools-top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+#lr04 .lr04-drawertools-top .lr04-widebutton{width:auto;flex:1 1 auto;margin-top:0}
+#lr04 .lr04-drawer{margin-bottom:12px;border:1px solid #262e35;border-radius:6px;overflow:hidden;background:#1c2026}
+#lr04 .lr04-drawerhead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;cursor:pointer;user-select:none;background:#22272e}
+#lr04 .lr04-drawerhead:focus{outline:1px solid #3a4a6a;outline-offset:-1px}
+#lr04 .lr04-drawertoggle{background:none;border:0;color:#e1e2e6;font-size:12px;font-weight:600;cursor:pointer;padding:0;text-align:left;flex:1 1 auto}
+/* A seta gira conforme aria-expanded da gaveta (expandida = aponta pra baixo). */
+#lr04 .lr04-arrow{display:inline-block;transition:transform .12s ease;transform:rotate(90deg)}
+#lr04 .lr04-drawer[aria-expanded="false"] .lr04-arrow{transform:rotate(0deg)}
+#lr04 .lr04-drawertools button{background:#2b3038;color:#c6c9cf;border:0;border-radius:4px;font-size:10px;padding:3px 7px;cursor:pointer}
+#lr04 .lr04-drawerbody{padding:10px}
+#lr04 .lr04-drawerbody[hidden]{display:none !important}
+/* Card "Adicionar modelo": borda tracejada, sem thumb, centralizado, com "+". */
+#lr04 .lr04-card-add{border:1px dashed #4a525c !important;background:transparent !important;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#9aa0a8}
+#lr04 .lr04-card-add .lr04-plus{font-size:30px;line-height:1;font-weight:300}
+#lr04 .lr04-card-add strong{color:#9aa0a8}
+/* Acao de deletar no canto do card (sempre visivel). */
+#lr04 .lr04-card{position:relative}
+#lr04 .lr04-card-del{position:absolute;top:4px;right:4px;z-index:2;width:18px;height:18px;line-height:16px;text-align:center;border-radius:50%;background:rgba(20,22,26,.85);color:#e1e2e6;font-size:12px;cursor:pointer;border:1px solid #414953}
+#lr04 .lr04-card-del:hover{background:#b23b3b;border-color:#b23b3b;color:#fff}
+#lr04 .lr04-emptyhint{color:var(--lr-muted);font-size:12px;padding:8px 2px}
