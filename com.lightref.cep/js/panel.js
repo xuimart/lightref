@@ -364,7 +364,22 @@
         var file = inp.files[0], isImport = inp.getAttribute('data-import') === '1';
         inp.removeAttribute('data-import');
         if (isImport && file.path) {
-            try { var rec = LightRefStorage.importModel(file.path, file.name.replace(/\.[^.]+$/, '')); loadModel(LightRefStorage.modelFileURL(rec)); feedback('Modelo importado'); } catch (e) { feedback('Falha ao importar', true); }
+            try {
+                var rec = LightRefStorage.importModel(file.path, file.name.replace(/\.[^.]+$/, ''));
+                // Se o "+" foi clicado numa gaveta de categoria valida (diferente
+                // de 'Outros'), associa o modelo importado a essa categoria. (Req 3.5)
+                var target = pendingImportCat; pendingImportCat = null;
+                if (target && target !== CAT_OUTROS) {
+                    var cfg = {}; try { cfg = LightRefStorage.readConfig() || {}; } catch (e2) { cfg = {}; }
+                    if (categoryExists(target, cfg)) {
+                        try { LightRefStorage.setModelCategoryOverride('my:' + rec.id, target); } catch (e3) {}
+                    }
+                }
+                loadModel(LightRefStorage.modelFileURL(rec));
+                feedback('Modelo importado');
+                // Re-renderiza a Biblioteca se ela estiver aberta, para mostrar o novo card.
+                if (currentPage === 'library') renderCatalog('library');
+            } catch (e) { pendingImportCat = null; feedback('Falha ao importar', true); }
         } else {
             var url = file.path ? ('file:///' + file.path.replace(/\\/g,'/')) : URL.createObjectURL(file);
             loadModel(url);
@@ -879,6 +894,10 @@
     var CAT_OUTROS = 'Outros';
     var CAT_SEM = 'Sem categoria';
 
+    // Categoria alvo da proxima importacao pelo card "+" (guardada ao clicar no
+    // card "+" de uma gaveta; consumida por onFilePicked). Req 3.5.
+    var pendingImportCat = null;
+
     // Categoria padrao (do codigo) de um item da Biblioteca. itemKey e a url
     // ('models/asaro.obj') para modelo padrao, ou 'my:<id>' para importado.
     // Importados nao tem categoria padrao => null.
@@ -898,6 +917,23 @@
         var custom = (cfg && cfg.modelCategories) || [];
         for (var j = 0; j < custom.length; j++) if (custom[j] === name) return true;
         return false;
+    }
+
+    // Valida um nome de categoria (criar ou renomear). Comparacao case-insensitive
+    // e trim contra a lista de nomes existentes. Funcao pura (testavel) usada tanto
+    // no create quanto no rename. (Req 4.3/4.4, 9.3/9.4)
+    // Retorna { ok:true, name:<trim> } ou { ok:false, reason:'empty'|'duplicate' }.
+    function validateNewCategoryName(name, existingNames) {
+        var trimmed = (name == null) ? '' : String(name).replace(/^\s+|\s+$/g, '');
+        if (trimmed === '') return { ok: false, reason: 'empty' };
+        var lower = trimmed.toLowerCase();
+        var list = existingNames || [];
+        for (var i = 0; i < list.length; i++) {
+            if (list[i] != null && String(list[i]).toLowerCase() === lower) {
+                return { ok: false, reason: 'duplicate' };
+            }
+        }
+        return { ok: true, name: trimmed };
     }
 
     // Precedencia: override (se valido) > categoria padrao > 'Outros' (Req 4.5).
@@ -1080,6 +1116,8 @@
         refreshIcons();
         bindDrawerHandlers(model);
         bindCardOpenHandlers(model);
+        bindCardDeleteHandlers(model);
+        bindCardAddHandlers(model);
         bindCatalogTopActions(model);
     }
 
@@ -1140,10 +1178,153 @@
         });
     }
 
-    // Acoes de topo: por ora liga "Salvar cena atual" (Cenas). "Nova categoria",
-    // card "+" e renomear entram nas Etapas 4. Deixamos os hooks prontos.
+    // Acoes de topo: "Salvar cena atual" (Cenas), "Nova categoria" e o botao
+    // "Renomear" no cabecalho de cada gaveta renomeavel.
     function bindCatalogTopActions(model) {
         var sb = $('#scene-save-btn'); if (sb) sb.onclick = saveScenePrompt;
+        var nc = $('.lr04-catalog [data-action="new-cat"]');
+        if (nc) nc.onclick = function () { onCreateCategory(model.page); };
+        $all('.lr04-catalog [data-action="rename-cat"]').forEach(function (btn) {
+            btn.onclick = function (ev) {
+                ev.stopPropagation();
+                var catId = btn.getAttribute('data-cat');
+                onRenameCategory(model.page, catId);
+            };
+        });
+    }
+
+    // Card "+": ao clicar, guarda a categoria da gaveta onde o "+" esta (para
+    // associar o modelo importado a ela) e abre o seletor de arquivo. (Req 3.2/3.5)
+    function bindCardAddHandlers(model) {
+        $all('.lr04-catalog [data-action="add-model"]').forEach(function (btn) {
+            btn.onclick = function (ev) {
+                ev.stopPropagation();
+                var drawer = btn.closest ? btn.closest('.lr04-drawer') : null;
+                pendingImportCat = drawer ? drawer.getAttribute('data-cat') : null;
+                var inp = $('#file-input');
+                if (inp) { inp.setAttribute('data-import', '1'); inp.click(); }
+            };
+        });
+    }
+
+    // Deletar item (o "x" no card, so em cards deletaveis). Abre confirmacao;
+    // ao confirmar chama deleteModel; se o unlink falhar, mantem o card. (Req 1/2)
+    function bindCardDeleteHandlers(model) {
+        $all('.lr04-catalog .lr04-card-del').forEach(function (x) {
+            x.onclick = function (ev) {
+                ev.stopPropagation();
+                var card = x.closest ? x.closest('.lr04-card') : null;
+                if (!card) return;
+                var kind = card.getAttribute('data-kind');
+                var id = card.getAttribute('data-id');
+                var title = '';
+                var strong = card.querySelector('strong');
+                if (strong) title = strong.textContent || '';
+                confirmDeleteItem(model.page, kind, id, title);
+            };
+        });
+    }
+
+    // Dialogo de confirmacao de delecao. So mymodel e tratado nesta etapa; cena
+    // fica para a Etapa 6 (nao quebra: apenas fecha o dialogo).
+    function confirmDeleteItem(page, kind, id, title) {
+        openDialog('Excluir',
+            '<p style="margin:0 0 12px">Excluir ' + escapeText(title) + '?</p>' +
+            '<div class="lr04-row" style="justify-content:flex-end;gap:8px">' +
+            '<button id="del-cancel" style="background:#303540">Cancelar</button>' +
+            '<button id="del-confirm" style="background:#7a2e2e;color:#fff">Excluir</button>' +
+            '</div>');
+        var cancel = $('#del-cancel'); if (cancel) cancel.onclick = function () { closeDialog(); };
+        var confirm = $('#del-confirm');
+        if (confirm) confirm.onclick = function () {
+            if (kind === 'mymodel') {
+                var mid = parseInt(id, 10);
+                var res;
+                try { res = LightRefStorage.deleteModel(mid); } catch (e) { res = { ok: false }; }
+                if (res && res.ok === false) {
+                    feedback('Falha ao remover o arquivo do modelo', true);
+                    // Mantem o card (nao re-renderiza removendo).
+                    return;
+                }
+                closeDialog();
+                renderCatalog('library');
+            } else {
+                // scene: tratado na Etapa 6.
+                closeDialog();
+            }
+        };
+    }
+
+    // Escapa texto para uso seguro em innerHTML (nomes de modelo/categoria).
+    function escapeText(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Nomes existentes para validacao de categoria (padrao + custom) da pagina.
+    function existingCategoryNames(page) {
+        var cfg = {}; try { cfg = LightRefStorage.readConfig() || {}; } catch (e) { cfg = {}; }
+        var names = [];
+        if (page === 'library') {
+            LIBRARY_DEFAULT_CATS.forEach(function (c) { names.push(c); });
+            (cfg.modelCategories || []).forEach(function (c) { names.push(c); });
+        } else {
+            (cfg.sceneCategories || []).forEach(function (c) { names.push(c); });
+        }
+        return names;
+    }
+
+    // Criar categoria: dialogo com input + Salvar. Valida vazio/duplicado. (Req 4.1/4.3/4.4)
+    function onCreateCategory(page) {
+        openDialog('Nova categoria',
+            '<div class="lr04-row"><span>Nome</span><input type="text" id="cat-name" style="grid-column:2 / span 2;background:#303540;border:1px solid #414953;border-radius:4px;color:#e1e2e6;height:30px;padding:0 9px"></div>' +
+            '<button id="cat-save" style="background:#303540;margin-top:8px">Salvar</button>');
+        var save = $('#cat-save');
+        if (save) save.onclick = function () {
+            var input = $('#cat-name');
+            var v = validateNewCategoryName(input ? input.value : '', existingCategoryNames(page));
+            if (!v.ok) {
+                feedback(v.reason === 'duplicate' ? 'Categoria ja existe' : 'Informe um nome de categoria', true);
+                return; // mantem o dialogo aberto
+            }
+            try {
+                if (page === 'library') LightRefStorage.addModelCategory(v.name);
+                else LightRefStorage.addSceneCategory(v.name);
+            } catch (e) { feedback('Falha ao criar categoria', true); return; }
+            closeDialog();
+            renderCatalog(page);
+        };
+    }
+
+    // Renomear categoria: dialogo preenchido com o nome atual. Mesmas validacoes.
+    // (Req 4.2/4.3/4.4) So categorias renamable tem o botao (garantido no drawerHTML).
+    function onRenameCategory(page, catId) {
+        var oldName = catId;
+        openDialog('Renomear categoria',
+            '<div class="lr04-row"><span>Nome</span><input type="text" id="cat-name" value="' + escapeText(oldName) + '" style="grid-column:2 / span 2;background:#303540;border:1px solid #414953;border-radius:4px;color:#e1e2e6;height:30px;padding:0 9px"></div>' +
+            '<button id="cat-save" style="background:#303540;margin-top:8px">Salvar</button>');
+        var save = $('#cat-save');
+        if (save) save.onclick = function () {
+            var input = $('#cat-name');
+            var raw = input ? input.value : '';
+            var trimmed = String(raw == null ? '' : raw).replace(/^\s+|\s+$/g, '');
+            // Nome igual ao atual (ignorando trim): apenas fecha, nada muda.
+            if (trimmed === oldName) { closeDialog(); return; }
+            // Valida contra os demais nomes (exclui o proprio nome atual).
+            var others = existingCategoryNames(page).filter(function (n) { return n !== oldName; });
+            var v = validateNewCategoryName(raw, others);
+            if (!v.ok) {
+                feedback(v.reason === 'duplicate' ? 'Categoria ja existe' : 'Informe um nome de categoria', true);
+                return;
+            }
+            try {
+                if (page === 'library') LightRefStorage.renameModelCategory(oldName, v.name);
+                else LightRefStorage.renameSceneCategory(oldName, v.name);
+            } catch (e) { feedback('Falha ao renomear categoria', true); return; }
+            closeDialog();
+            renderCatalog(page);
+        };
     }
 
     function renderCatalog(page) {
@@ -1159,6 +1340,7 @@
                 defaultCatOf: defaultCatOf,
                 categoryExists: categoryExists,
                 resolveModelCategory: resolveModelCategory,
+                validateNewCategoryName: validateNewCategoryName,
                 itemDeletable: itemDeletable,
                 cardHTML: cardHTML,
                 addCardHTML: addCardHTML,
