@@ -431,6 +431,7 @@
         var rootUrl = url.substring(0, idx + 1);
         var fileName = url.substring(idx + 1);
 
+        this._currentLoadUrl = url;
         BABYLON.SceneLoader.ImportMesh('', rootUrl, fileName, this.scene, function (meshes) {
             self._installModel(meshes, onDone);
         }, function (evt) {
@@ -494,6 +495,8 @@
         var size = max.subtract(min), center = min.add(size.scale(0.5));
         var maxDim = Math.max(size.x, size.y, size.z) || 1;
         var scale = 3 / maxDim;
+        // Formas basicas carregam 40% menores que os modelos normais.
+        if (/forma-/i.test(this._currentLoadUrl || '')) scale *= 0.6;
         // Transform base (normalizacao automatica). Os ajustes do usuario sao aplicados por cima.
         this._baseScale = scale;
         this._basePos = new BABYLON.Vector3(-center.x * scale, -center.y * scale, -center.z * scale);
@@ -620,6 +623,52 @@
         var ctx = tmp.getContext('2d');
         ctx.drawImage(this.canvas, 0, 0, 160, 160);
         return tmp.toDataURL(this._bgTransparent ? 'image/png' : 'image/jpeg', 0.7);
+    };
+
+    // Miniatura PADRONIZADA (igual as geradas offline): camera de frente, luz
+    // chapada, fundo cinza, retrato 480x640. Renderiza o modelo principal numa
+    // camera/luz temporarias e captura via RenderTarget. Assincrono: cb(dataURL).
+    Scene.prototype.standardThumbnail = function (cb) {
+        var self = this;
+        if (!this.modelRoot) { cb(null); return; }
+        var sc = this.scene;
+        // Câmera temporaria de frente (mesmos parametros do gerador).
+        var tcam = new BABYLON.ArcRotateCamera('thumbCam', -Math.PI/2, Math.PI/2, 4.2, new BABYLON.Vector3(0,0,0), sc);
+        tcam.fov = 0.7; tcam.minZ = 0.05;
+        // Luz chapada temporaria.
+        var themi = new BABYLON.HemisphericLight('thumbHemi', new BABYLON.Vector3(0.3,1,0.6), sc);
+        themi.intensity = 0.95; themi.groundColor = new BABYLON.Color3(0.4,0.4,0.42);
+        var tdir = new BABYLON.DirectionalLight('thumbDir', new BABYLON.Vector3(-0.4,-0.6,1), sc);
+        tdir.intensity = 1.1;
+        // Esconde chao e marcadores; luzes do usuario ficam (nao afetam pois a
+        // camera/luz temporarias dominam) - mas escondemos o chao e helpers.
+        var ground = this.ground, showGround = ground && ground.isEnabled();
+        if (ground) ground.setEnabled(false);
+        var hadHelpers = this.lightManager && this.lightManager.showHelpers;
+        if (this.lightManager && this.lightManager.setHelpersVisible) this.lightManager.setHelpersVisible(false);
+        // Desliga as luzes do usuario temporariamente (thumb usa so a luz chapada).
+        var userLights = [];
+        if (this.lightManager) {
+            for (var i=0;i<this.lightManager.lights.length;i++){ var L=this.lightManager.lights[i]; if (L._bl && L._bl.isEnabled()){ userLights.push(L); L._bl.setEnabled(false); } }
+        }
+        var prevClear = sc.clearColor;
+        sc.clearColor = new BABYLON.Color4(0.17,0.185,0.21,1);
+        function restore() {
+            sc.clearColor = prevClear;
+            if (ground && showGround) ground.setEnabled(true);
+            for (var i=0;i<userLights.length;i++) userLights[i]._bl.setEnabled(true);
+            if (this.lightManager && hadHelpers && this.lightManager.setHelpersVisible) this.lightManager.setHelpersVisible(true);
+            try { tcam.dispose(); } catch(e){} try { themi.dispose(); } catch(e){} try { tdir.dispose(); } catch(e){}
+        }
+        try {
+            BABYLON.Tools.CreateScreenshotUsingRenderTarget(self.engine, tcam, { width: 480, height: 640 }, function (data) {
+                restore.call(self);
+                cb(data);
+            }, 'image/png');
+        } catch (e) {
+            restore.call(self);
+            cb(null);
+        }
     };
 
     // Modo pose e helpers de luz (compat com panel.js; manequim arquivado).

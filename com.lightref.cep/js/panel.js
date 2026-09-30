@@ -702,16 +702,21 @@
             var sp = $('#save-position');
             if (sp) sp.onclick = function () {
                 saveModelXform();
-                // Atualiza a miniatura do modelo com o estado atual do visor.
-                try {
-                    if (currentModelUrl && scene.thumbnailDataURL) {
-                        var thumb = scene.thumbnailDataURL();
-                        var cfg = LightRefStorage.readConfig(); cfg.modelThumbs = cfg.modelThumbs || {};
-                        cfg.modelThumbs[currentModelUrl] = thumb;
-                        LightRefStorage.writeConfig({ modelThumbs: cfg.modelThumbs });
-                    }
-                } catch (e) {}
-                feedback('Posicao e miniatura salvas');
+                feedback('Salvando...');
+                // Miniatura PADRONIZADA (igual as geradas): assincrona.
+                var savedUrl = currentModelUrl;
+                function useThumb(thumb) {
+                    try {
+                        if (savedUrl && thumb) {
+                            var cfg = LightRefStorage.readConfig(); cfg.modelThumbs = cfg.modelThumbs || {};
+                            cfg.modelThumbs[savedUrl] = thumb;
+                            LightRefStorage.writeConfig({ modelThumbs: cfg.modelThumbs });
+                        }
+                    } catch (e) {}
+                    feedback('Posicao e miniatura salvas');
+                }
+                if (scene.standardThumbnail) scene.standardThumbnail(useThumb);
+                else useThumb(scene.thumbnailDataURL ? scene.thumbnailDataURL() : null);
             };
         }
         // Gizmo do pane Posicao (atua no modelo principal).
