@@ -93,8 +93,3 @@ body { display: flex; }
 /* Modo referencia (olho): visor cheio, esconde toda a UI de baixo. */
 #lr04 .lr04-reference .lr04-middle,#lr04 .lr04-reference .lr04-footer{display:none}
 #lr04 .lr04-reference .lr04-notice{display:none}
-
-/* Seletor de tipo de luz (Sol/Ponto/Spot) */
-#lr04 .lr04-lighttype{display:flex;gap:4px;margin-bottom:8px}
-#lr04 .lr04-typebtn{flex:1;padding:5px 6px;font-size:11px;cursor:pointer;background:#1c242c;color:#aeb8c6;border:1px solid #34485f;border-radius:3px}
-#lr04 .lr04-typebtn.active{border-color:var(--lr-accent);color:var(--lr-accent);background:#372937}

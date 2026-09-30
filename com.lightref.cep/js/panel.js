@@ -554,37 +554,13 @@
         var fieldsHost = $('.lr04-lightfields'); if (fieldsHost) {
             var l = selectedLightId != null ? scene.lightManager.get(selectedLightId) : null;
             if (l) {
-                var lt = l.type || 'sun';
-                // Seletor de tipo: Sol / Ponto / Spot.
-                function tbtn(v, label) {
-                    return '<button type="button" class="lr04-typebtn'+(lt===v?' active':'')+'" data-ltype="'+v+'">'+label+'</button>';
-                }
-                var typeRow = '<div class="lr04-lighttype">' + tbtn('sun','Sol') + tbtn('point','Ponto') + tbtn('spot','Spot') + '</div>';
-                var html = typeRow +
+                fieldsHost.innerHTML =
                     row('Intensidade','sl-intensity',0,10,0.1, l.intensity, '') +
                     row('Girar','sl-azimuth',0,360,1, l.azimuth, '\u00b0') +
-                    row('Altura','sl-elevation',-90,90,1, l.elevation, '\u00b0');
-                // Alcance so faz sentido em point/spot (o sol e infinito).
-                if (lt === 'point' || lt === 'spot') {
-                    html += row('Alcance','sl-range',5,80,1, (l.range!=null?l.range:40), '');
-                }
-                // Angulo do cone so no spot.
-                if (lt === 'spot') {
-                    html += row('Cone','sl-cone',10,120,1, (l.spotAngle!=null?l.spotAngle:50), '\u00b0');
-                    html += row('Suavidade cone','sl-blend',0,1,0.01, (l.spotBlend!=null?l.spotBlend:0.15), '');
-                }
-                html += row('Suavidade','sl-softness',1,96,1, (l.softness!=null?l.softness:32), '') +
-                        row('Tamanho da fonte','sl-srcsize',1,14,0.5, (l.sourceSize!=null?l.sourceSize:6), '');
-                fieldsHost.innerHTML = html;
+                    row('Altura','sl-elevation',-90,90,1, l.elevation, '\u00b0') +
+                    row('Suavidade','sl-softness',1,96,1, (l.softness!=null?l.softness:32), '') +
+                    row('Abertura','sl-srcsize',1,14,0.5, (l.sourceSize!=null?l.sourceSize:6), '');
                 wireRanges(fieldsHost);
-                // Liga os botoes de tipo: troca o tipo e re-renderiza os campos.
-                $all('.lr04-lighttype [data-ltype]', fieldsHost).forEach(function (b) {
-                    b.onclick = function () {
-                        var t = this.getAttribute('data-ltype');
-                        if (scene.lightManager.setType) scene.lightManager.setType(selectedLightId, t);
-                        renderTab();
-                    };
-                });
             } else {
                 fieldsHost.innerHTML = '';
             }
@@ -815,9 +791,6 @@
             case 'sl-elevation': scene.lightManager.update(selectedLightId,'elevation', parseInt(value,10)); break;
             case 'sl-softness': scene.lightManager.update(selectedLightId,'softness', parseFloat(value)); break;
             case 'sl-srcsize': scene.lightManager.update(selectedLightId,'sourceSize', parseFloat(value)); break;
-            case 'sl-range': scene.lightManager.update(selectedLightId,'range', parseFloat(value)); break;
-            case 'sl-cone': scene.lightManager.update(selectedLightId,'spotAngle', parseFloat(value)); break;
-            case 'sl-blend': scene.lightManager.update(selectedLightId,'spotBlend', parseFloat(value)); break;
             case 'sl-focal': scene.setFocalLength(parseInt(value,10)); break;
             case 'sl-envint': if (scene.setEnvIntensity) scene.setEnvIntensity(v); break;
             case 'sl-exposure': scene.postfx.setParam('exposure', v); break;
@@ -925,7 +898,7 @@
         };
     }
     function collectState() {
-        var lights = scene.lightManager.lights.map(function (l){ return {name:l.name,color:l.color,intensity:l.intensity,azimuth:l.azimuth,elevation:l.elevation,enabled:l.enabled,softness:l.softness,sourceSize:l.sourceSize,type:l.type,range:l.range,spotAngle:l.spotAngle,spotBlend:l.spotBlend}; });
+        var lights = scene.lightManager.lights.map(function (l){ return {name:l.name,color:l.color,intensity:l.intensity,azimuth:l.azimuth,elevation:l.elevation,enabled:l.enabled,softness:l.softness,sourceSize:l.sourceSize,}; });
         var matParams = scene.getMaterialParams ? scene.getMaterialParams() : null;
         var mp = {}; if (matParams) { for (var k in matParams) if (matParams.hasOwnProperty(k)) mp[k] = matParams[k]; }
         var ms = $('#model-select');
