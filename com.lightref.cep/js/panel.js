@@ -702,7 +702,16 @@
             var sp = $('#save-position');
             if (sp) sp.onclick = function () {
                 saveModelXform();
-                feedback('Posicao do modelo salva');
+                // Atualiza a miniatura do modelo com o estado atual do visor.
+                try {
+                    if (currentModelUrl && scene.thumbnailDataURL) {
+                        var thumb = scene.thumbnailDataURL();
+                        var cfg = LightRefStorage.readConfig(); cfg.modelThumbs = cfg.modelThumbs || {};
+                        cfg.modelThumbs[currentModelUrl] = thumb;
+                        LightRefStorage.writeConfig({ modelThumbs: cfg.modelThumbs });
+                    }
+                } catch (e) {}
+                feedback('Posicao e miniatura salvas');
             };
         }
         // Gizmo do pane Posicao (atua no modelo principal).
@@ -855,15 +864,23 @@
         if (page === 'library') {
             var icon = '<div class="lr04-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg></div>';
             var thumbs = {}; try { thumbs = LightRefStorage.readConfig().modelThumbs || {}; } catch (e) {}
-            // Thumbs padronizadas (geradas offline) ficam em models/thumbs/<arquivo>.png.
+            // Thumbs padronizadas (geradas offline) existem para os modelos padrao
+            // (MODELS) e formas (SHAPES). Monta o set de URLs que TEM PNG fixo.
+            var fixedSet = {};
+            MODELS.forEach(function(m){ fixedSet[m.v] = 1; });
+            if (typeof SHAPES !== 'undefined') SHAPES.forEach(function(sh){ fixedSet[sh.v] = 1; });
+            function fileBase(url){ var m = /([^\/]+)\.(obj|stl|glb|gltf)$/i.exec(url || ''); return m ? m[1] : null; }
             function fixedThumb(url) {
-                var m = /models\/([^\/]+)\.(obj|stl|glb|gltf)$/i.exec(url || '');
-                return m ? 'models/thumbs/' + m[1] + '.png' : null;
+                if (!fixedSet[url]) return null;
+                var base = fileBase(url);
+                return base ? 'models/thumbs/' + base + '.png' : null;
             }
             function preview(url) {
+                // Override salvo pelo usuario (ao 'Salvar posicao') tem prioridade.
+                if (thumbs[url]) return '<img src="'+thumbs[url]+'" loading="lazy">';
                 var ft = fixedThumb(url);
                 if (ft) return '<img src="'+ft+'" loading="lazy">';
-                return thumbs[url] ? '<img src="'+thumbs[url]+'" loading="lazy">' : icon;
+                return icon;
             }
             function cardFor(url, title, tag) { return '<button class="lr04-card" data-defurl="'+url+'">'+preview(url)+'<strong>'+title+'</strong><small>'+(tag||'')+'</small></button>'; }
             var allDef = MODELS.slice();
