@@ -21,3 +21,6 @@ Desktop.ini
 
 # temporarios de trabalho
 _*.txt
+node_modules/
+package.json
+package-lock.json

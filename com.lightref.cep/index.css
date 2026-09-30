@@ -96,3 +96,12 @@ body { display: flex; }
 
 /* Composicao ocultada (feature desativada na UI) */
 #lr04 .lr04-tabs button[data-tab="composition"]{display:none}
+
+/* Galeria: 4 colunas, cards em pe (retrato) */
+#lr04 .lr04-gallery{grid-template-columns:repeat(4,minmax(0,1fr)) !important;gap:9px}
+#lr04 .lr04-gallery button{min-height:0 !important;padding:6px}
+#lr04 .lr04-gallery button img{height:auto !important;aspect-ratio:3/4;object-fit:cover !important;width:100%;border-radius:3px;background:#2b2f36}
+#lr04 .lr04-gallery .lr04-placeholder{height:auto !important;aspect-ratio:3/4}
+#lr04 .lr04-gallery button strong{font-size:11px;margin-top:5px;text-align:center;line-height:1.2}
+/* 2 colunas em telas bem estreitas */
+@media (max-width:520px){#lr04 .lr04-gallery{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}

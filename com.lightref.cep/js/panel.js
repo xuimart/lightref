@@ -295,18 +295,23 @@
             // Restaura ajustes salvos deste modelo; se nao houver, usa o yaw padrao.
             if (!restoreModelXform(url)) { var y = modelYaw(url); if (y && scene.setModelRotation) scene.setModelRotation(y, 0); }
             if (currentTab === 'pos') renderTab();
-            setTimeout(function () {
-                if (myToken !== loadToken) return;
-                try {
-                    var cfg = LightRefStorage.readConfig();
-                    cfg.modelThumbs = cfg.modelThumbs || {};
-                    if (!cfg.modelThumbs[url]) {
-                        var thumb = scene.frontThumbnailDataURL ? scene.frontThumbnailDataURL() : scene.thumbnailDataURL();
-                        cfg.modelThumbs[url] = thumb;
-                        LightRefStorage.writeConfig({ modelThumbs: cfg.modelThumbs });
-                    }
-                } catch (e) {}
-            }, 400);
+            // Modelos padrao tem thumb fixa (models/thumbs/*.png). So geramos
+            // thumb sob demanda para modelos IMPORTADOS pelo usuario.
+            var isDefault = /(^|\/)models\//.test(url) && !/importados|imported|Meus/.test(url);
+            if (!isDefault) {
+                setTimeout(function () {
+                    if (myToken !== loadToken) return;
+                    try {
+                        var cfg = LightRefStorage.readConfig();
+                        cfg.modelThumbs = cfg.modelThumbs || {};
+                        if (!cfg.modelThumbs[url]) {
+                            var thumb = scene.frontThumbnailDataURL ? scene.frontThumbnailDataURL() : scene.thumbnailDataURL();
+                            cfg.modelThumbs[url] = thumb;
+                            LightRefStorage.writeConfig({ modelThumbs: cfg.modelThumbs });
+                        }
+                    } catch (e) {}
+                }, 400);
+            }
             if (done) done();
         });
     }
@@ -850,7 +855,16 @@
         if (page === 'library') {
             var icon = '<div class="lr04-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg></div>';
             var thumbs = {}; try { thumbs = LightRefStorage.readConfig().modelThumbs || {}; } catch (e) {}
-            function preview(url) { return thumbs[url] ? '<img src="'+thumbs[url]+'">' : icon; }
+            // Thumbs padronizadas (geradas offline) ficam em models/thumbs/<arquivo>.png.
+            function fixedThumb(url) {
+                var m = /models\/([^\/]+)\.(obj|stl|glb|gltf)$/i.exec(url || '');
+                return m ? 'models/thumbs/' + m[1] + '.png' : null;
+            }
+            function preview(url) {
+                var ft = fixedThumb(url);
+                if (ft) return '<img src="'+ft+'" loading="lazy">';
+                return thumbs[url] ? '<img src="'+thumbs[url]+'" loading="lazy">' : icon;
+            }
             function cardFor(url, title, tag) { return '<button class="lr04-card" data-defurl="'+url+'">'+preview(url)+'<strong>'+title+'</strong><small>'+(tag||'')+'</small></button>'; }
             var allDef = MODELS.slice();
             if (typeof SHAPES !== 'undefined') { SHAPES.forEach(function(s){ allDef.push({v:s.v, t:s.t, cat:'Formas basicas'}); }); }
