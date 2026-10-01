@@ -17,6 +17,7 @@
      <button data-toggle="floor" aria-pressed="true" aria-label="Chão" data-tooltip="Chão"><i data-lucide="mountain" aria-hidden="true"></i></button>
      <button data-toggle="guides" aria-pressed="true" aria-label="Guias das luzes" data-tooltip="Guias das luzes"><i data-lucide="crosshair" aria-hidden="true"></i></button>
      <button data-toggle="reference" aria-pressed="false" aria-label="Modo referência" data-tooltip="Modo referência"><i data-lucide="eye" aria-hidden="true"></i></button>
+     <button id="btn-help" class="lr04-help" type="button" aria-label="Rever introducao" data-tooltip="Rever introducao"><i data-lucide="help-circle" aria-hidden="true"></i></button>
     </div>
     <div class="lr04-sidetools" aria-label="Filtros rápidos">
      <div class="lr04-quickrow"><button data-toggle="poster" aria-pressed="false" aria-label="Posterizar" data-tooltip="Posterizar"><i data-lucide="chart-no-axes-column" aria-hidden="true"></i></button><label class="lr04-quickslider" data-filter-controls="poster" hidden><input data-key="levels" type="range" min="2" max="12" value="4" aria-label="Níveis de posterização"><output>4</output></label></div>
@@ -54,7 +55,38 @@
    </div>
   </div>
   <section class="lr04-catalog" aria-label="Biblioteca e cenas" hidden></section>
-  <footer class="lr04-footer"><span class="lr04-brand">LightRef</span><nav aria-label="Navegação principal"><button data-page="studio" aria-pressed="true">3D</button><button data-page="library" aria-pressed="false">Biblioteca</button><button data-page="scenes" aria-pressed="false">Cenas</button></nav><button data-action="collapse" aria-label="Recolher painel" aria-expanded="true"><i data-lucide="chevron-down" aria-hidden="true"></i></button></footer>
+  <footer class="lr04-footer"><div class="lr04-footleft"><button id="btn-update" class="lr04-updbtn" type="button" aria-label="Verificar atualizacoes" data-tooltip="Verificar atualizacoes"><i data-lucide="refresh-cw" aria-hidden="true"></i><span class="lr04-updlabel">Atualizar</span></button><span class="lr04-brand" title="LightRef">LightRef <span class="lr04-ver" id="lr-version">v0.6.0</span></span></div><nav aria-label="Navegação principal"><button data-page="studio" aria-pressed="true">3D</button><button data-page="library" aria-pressed="false">Biblioteca</button><button data-page="scenes" aria-pressed="false">Cenas</button></nav><button data-action="collapse" aria-label="Recolher painel" aria-expanded="true"><i data-lucide="chevron-down" aria-hidden="true"></i></button></footer>
+  <div id="onboarding-modal" class="lr04-ob-modal" style="display:none">
+   <div class="lr04-ob-card">
+    <header class="lr04-ob-head">
+     <strong id="onboard-title">Bem-vindo ao LightRef</strong>
+     <div id="step-dots" class="step-dots" aria-hidden="true"></div>
+     <button id="onboard-close" class="lr04-ob-x" type="button" aria-label="Fechar"><i data-lucide="x" aria-hidden="true"></i></button>
+    </header>
+    <div class="xuim-mascot-container">
+     <img id="xuim-avatar-img" class="xuim-avatar-img" src="img/xuim_falando_normal.png" alt="Xuimzinho" style="transform:scaleX(-1)">
+     <div id="xuim-speech-bubble" class="speech-bubble-box"></div>
+    </div>
+    <div class="lr04-ob-body">
+     <section id="onboard-step-0" class="lr04-ob-step">
+      <div class="lang-cards-group">
+       <button class="lang-card" data-lang="pt" type="button"><span class="lang-name">Portugues</span></button>
+       <button class="lang-card" data-lang="en" type="button"><span class="lang-name">English</span></button>
+      </div>
+     </section>
+     <section id="onboard-step-1" class="lr04-ob-step" style="display:none"><div class="onboard-feature-box lang-ob-1"></div></section>
+     <section id="onboard-step-2" class="lr04-ob-step" style="display:none"><div class="onboard-feature-box lang-ob-2"></div></section>
+     <section id="onboard-step-3" class="lr04-ob-step" style="display:none"><div class="onboard-feature-box lang-ob-3"></div></section>
+     <section id="onboard-step-4" class="lr04-ob-step" style="display:none"><div class="onboard-feature-box lang-ob-4"></div></section>
+     <section id="onboard-step-5" class="lr04-ob-step" style="display:none"><div class="onboard-feature-box lang-ob-5"></div></section>
+    </div>
+    <footer class="lr04-ob-nav">
+     <button id="onboard-prev" class="lr04-ob-btn lang-back" type="button">Voltar</button>
+     <button id="onboard-next" class="lr04-ob-btn lr04-ob-primary lang-next" type="button">Proximo</button>
+     <button id="onboard-finish" class="lr04-ob-btn lr04-ob-primary lang-start" type="button" style="display:none">Comecar!</button>
+    </footer>
+   </div>
+  </div>
   <div class="lr04-modal" role="dialog" aria-modal="true" aria-labelledby="lr04-modal-title" hidden><div class="lr04-modalcard"><header><strong id="lr04-modal-title"></strong><button data-action="close" aria-label="Fechar"><i data-lucide="x" aria-hidden="true"></i></button></header><div class="lr04-modalbody"></div></div></div>
  </div>
 </div>
@@ -74,6 +106,8 @@
 <script src="js/scene.js?v=0929161917"></script>
 <script src="js/to-photoshop.js?v=0929161917"></script>
 <script src="js/update.js?v=0929161917"></script>
+<script src="js/onboarding.js?v=0929161917"></script>
+<script src="js/session.js?v=0929161917"></script>
 <script src="js/panel.js?v=0929161917"></script>
 </body>
 </html>

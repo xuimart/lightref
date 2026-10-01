@@ -1,0 +1,358 @@
+{
+  "pbtResults": {
+    "4.1 Escrever teste de propriedade de sanitizacao do Estado_da_Sessao": {
+      "status": "passed",
+      "lastRunTimestamp": 1790888706990
+    }
+  },
+  "executionHistory": {
+    "1. Adicionar camera e controle de render loop ao LightRefScene": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888191367
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888203345
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888323961
+      }
+    ],
+    "2. Adicionar o token de sessao persistente em init.jsx": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888191596
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888204393
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888325660
+      }
+    ],
+    "3. Checkpoint C1 - Ensure all tests pass": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888191795
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888330559
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888372722
+      }
+    ],
+    "7. Carregar session.js e onboarding.js na ordem correta em index.html": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888191987
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889749531
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889785527
+      }
+    ],
+    "8. Checkpoint C2 - Ensure all tests pass": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888192157
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889786304
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889806916
+      }
+    ],
+    "9. Adicionar a marcacao do controle de atualizacao no rodape (index.html)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888192348
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889814873
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889923220
+      }
+    ],
+    "10. Adicionar o CSS do controle de atualizacao (index.css)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888192519
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889815688
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889924615
+      }
+    ],
+    "13. Checkpoint A - Ensure all tests pass": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888192692
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890322373
+      }
+    ],
+    "14. Adicionar a marcacao do modal do wizard e o #btn-help (index.html)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888192865
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890330671
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890460993
+      }
+    ],
+    "15. Adicionar o CSS do wizard e do #btn-help (index.css)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888193050
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890329798
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890461932
+      }
+    ],
+    "17. Fiar o wizard no boot apos a restauracao de sessao (panel.js)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888193233
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890756744
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890794423
+      }
+    ],
+    "18. Registrar os novos testes no package.json e checkpoint final": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888193480
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890795333
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890826521
+      }
+    ],
+    "4. Ampliar o estado para Estado_da_Sessao (sv:3) em panel.js": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888391114
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888758892
+      }
+    ],
+    "4.1 Escrever teste de propriedade de sanitizacao do Estado_da_Sessao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888758686
+      }
+    ],
+    "5. Criar o modulo de sessao js/session.js (window.LightRefSession)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790888773988
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889129781
+      }
+    ],
+    "5.1 Escrever teste de propriedade de deteccao de sessao por token": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889129575
+      }
+    ],
+    "5.2 Escrever teste de propriedade de isolamento por versao do Host": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889130947
+      }
+    ],
+    "5.3 Escrever teste de propriedade de debounce de gravacao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889131911
+      }
+    ],
+    "6. Fiar o boot de sessao, a captura e a pausa de render em panel.js": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889140209
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889740364
+      }
+    ],
+    "6.1 Escrever teste de propriedade round-trip do Estado_da_Sessao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889740134
+      }
+    ],
+    "6.2 Escrever teste de propriedade de idempotencia da restauracao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889741020
+      }
+    ],
+    "6.3 Escrever testes de exemplo do boot de sessao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889742439
+      }
+    ],
+    "11. Extrair decideUpdateOutcome e adicionar cache-buster em js/update.js": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790889925487
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890112391
+      }
+    ],
+    "11.1 Escrever teste de propriedade da decisao de atualizacao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890113294
+      }
+    ],
+    "12. Ampliar setupUpdates em panel.js (versao, botao, gatilho secundario)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890115435
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890320196
+      }
+    ],
+    "12.1 Escrever smoke test do controle de atualizacao": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890321613
+      }
+    ],
+    "16. Reescrever a fala do passo 5 do onboarding.js (conteudo, sem doacao)": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890463247
+      },
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890753616
+      }
+    ],
+    "16.1 Escrever testes de propriedade de conteudo e navegacao do wizard": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890753373
+      }
+    ],
+    "16.2 Escrever testes de exemplo do onboarding": [
+      {
+        "executionId": "ae20ebf9-b7d2-4236-bccc-f131dbbf56a8",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790890754266
+      }
+    ]
+  }
+}

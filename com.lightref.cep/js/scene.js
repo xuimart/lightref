@@ -325,6 +325,45 @@
         this.camera.alpha = a; this.camera.beta = b;
     };
 
+    // ---------- Estado da camera (sessao) ----------
+    // Le o estado orbital da ArcRotateCamera para persistir/restaurar a sessao.
+    Scene.prototype.getCameraState = function () {
+        var c = this.camera;
+        if (!c) return null;
+        var t = c.target || c.getTarget();
+        return { alpha: c.alpha, beta: c.beta, radius: c.radius,
+                 target: { x: t.x, y: t.y, z: t.z } };
+    };
+    // Aplica um estado de camera salvo. Ignora valores ausentes/nao finitos
+    // e nao lanca quando 's' e nulo.
+    Scene.prototype.setCameraState = function (s) {
+        if (!s) return;
+        var c = this.camera;
+        if (!c) return;
+        if (isFinite(s.alpha)) c.alpha = s.alpha;
+        if (isFinite(s.beta)) c.beta = s.beta;
+        if (isFinite(s.radius)) c.radius = s.radius;
+        if (s.target && isFinite(s.target.x) && isFinite(s.target.y) && isFinite(s.target.z)) {
+            c.setTarget(new BABYLON.Vector3(s.target.x, s.target.y, s.target.z));
+        }
+    };
+
+    // ---------- Pausa do render loop com o painel oculto ----------
+    // Suspende a renderizacao (economiza GPU/CPU quando o painel esta oculto).
+    Scene.prototype.suspendRender = function () {
+        if (!this.engine) return;
+        this.engine.stopRenderLoop();
+        this._renderPaused = true;
+    };
+    // Retoma a renderizacao religando o mesmo render loop do init.
+    Scene.prototype.resumeRender = function () {
+        if (!this.engine || !this._renderPaused) return;
+        var self = this;
+        this.engine.runRenderLoop(function () { self.scene.render(); });
+        this._renderPaused = false;
+    };
+
+
     // ---------- Materiais PBR de estudo ----------
     // Cada preset define os parametros PBR de partida. O usuario pode ajustar via
     // setMaterialParam (sliders estilo FormBox: roughness, metalness, specular,

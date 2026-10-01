@@ -136,3 +136,38 @@ body { display: flex; }
 
 /* Fallback de inset para CEF antigo */
 #lr04 .loading-overlay,#lr04 .lr04-modal,#lr04 #lf-checker,#lr04 canvas{top:0;right:0;bottom:0;left:0}
+/* ---- Botao de verificar atualizacao (rodape) ---- */
+#lr04 .lr04-footleft{display:flex;align-items:center;gap:8px;min-width:0}
+#lr04 .lr04-updbtn{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#c7ccd3;background:#1b1f26;border:1px solid #323740;border-radius:7px;padding:4px 8px;cursor:pointer}
+#lr04 .lr04-updbtn:hover{border-color:#4a515b;background:#222733}
+#lr04 .lr04-updbtn i{width:13px;height:13px}
+#lr04 .lr04-updbtn.is-checking i{animation:lr-spin 1s linear infinite}
+#lr04 .lr04-updlabel{line-height:1}
+#lr04 .lr04-ver{color:#717780}
+@keyframes lr-spin{to{transform:rotate(360deg)}}
+@media (max-width:420px){#lr04 .lr04-updlabel{display:none}}
+/* ---- Wizard de primeiro uso (Xuimzinho) ---- */
+#lr04 .lr04-ob-modal{position:fixed;inset:0;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:10000}
+#lr04 .lr04-ob-card{background:#1e1e24;border:1px solid #444;border-radius:10px;width:100%;max-width:340px;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+#lr04 .lr04-ob-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #333}
+#lr04 .lr04-ob-head #onboard-title{flex:0 0 auto;font-size:12px}
+#lr04 .lr04-ob-head .step-dots{flex:1;justify-content:center}
+#lr04 .step-dots{display:flex;gap:6px}
+#lr04 .step-dots .dot{width:8px;height:8px;border-radius:50%;background:#3a3a4a;transition:background .2s}
+#lr04 .step-dots .dot.active{background:#de2246}
+#lr04 .step-dots .dot.completed{background:#22c55e}
+#lr04 .lr04-ob-x{background:none;border:none;color:#aaa;cursor:pointer}
+#lr04 .xuim-mascot-container{display:flex;align-items:center;gap:10px;padding:12px;min-height:70px}
+#lr04 .xuim-avatar-img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #de2246;flex-shrink:0}
+#lr04 .speech-bubble-box{background:#2c2c36;color:#f0f0f0;font-size:11px;line-height:1.5;padding:8px 12px;border-radius:8px;border:1px solid #3c3c48;flex:1}
+#lr04 .lr04-ob-body{padding:0 12px 12px;overflow:auto}
+#lr04 .onboard-feature-box{background:#1e1e28;border:1px solid #3c3c48;border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.5}
+#lr04 .lang-cards-group{display:flex;gap:10px;justify-content:center;margin-top:8px}
+#lr04 .lang-card{flex:1;background:#1c1c24;border:2px solid #3a3a4a;border-radius:10px;padding:12px;text-align:center;cursor:pointer}
+#lr04 .lang-card:hover{border-color:#de2246;background:#252532}
+#lr04 .lang-card.selected{border-color:#de2246;background:#2a161e}
+#lr04 .lang-name{font-size:11px;font-weight:600;color:#e0e0e0}
+#lr04 .lr04-ob-nav{display:flex;gap:8px;justify-content:space-between;padding:10px 12px;border-top:1px solid #333}
+#lr04 .lr04-ob-btn{font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid #3a3a4a;background:#1b1f26;color:#c7ccd3;cursor:pointer}
+#lr04 .lr04-ob-primary{background:#de2246;border-color:#de2246;color:#fff}
+#lr04 .lr04-help{position:absolute;top:8px;right:8px;z-index:5;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(27,31,38,.8);border:1px solid #323740;color:#c7ccd3;cursor:pointer}

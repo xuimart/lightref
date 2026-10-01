@@ -18,7 +18,7 @@
     function paneName(tab) { return domFromTab(tab); }
 
     // Centraliza a selecao de luz: guarda o id e avisa a cena para os atalhos.
-    function selectLight(id) { selectedLightId = id; if (scene && scene.setActiveLight) scene.setActiveLight(id); }
+    function selectLight(id) { selectedLightId = id; if (scene && scene.setActiveLight) scene.setActiveLight(id); captureSession(); }
     // Renderiza os icones lucide presentes no DOM (estaticos do mockup).
     function refreshIcons() { try { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); } catch (e) {} }
     // Ctrl+Shift+1..5 seleciona rapidamente a luz correspondente.
@@ -153,6 +153,7 @@
         selectLight(nl.id);
         if (currentTab === 'light') renderTab();
         feedback('Luz adicionada: ' + nl.name);
+        captureSession();
         return nl;
     }
     function removeSelectedLight() {
@@ -164,6 +165,7 @@
         if (selectedLightId === wasId) selectLight(scene.lightManager.lights.length ? scene.lightManager.lights[0].id : null);
         if (currentTab === 'light') renderTab();
         feedback('Luz removida (Ctrl+Shift+Z desfaz)');
+        captureSession();
     }
     function undoLight() {
         if (!deletedLights.length) { feedback('Nada para desfazer', true); return; }
@@ -172,6 +174,7 @@
         selectLight(nl.id);
         if (currentTab === 'light') renderTab();
         feedback('Luz restaurada: ' + (d.name||''));
+        captureSession();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -213,18 +216,110 @@
             }
             if (phase === 'end' && currentTab === 'light') renderTab();
         });
-        setActiveTab('light');
         refreshIcons();
-        renderTab();
-        // Mantem o painel carregado ao minimizar, recolher ou fechar: os ajustes
-        // so voltam ao padrao quando o Photoshop fecha. Fica no fim do init para
-        // que, se algo falhar antes, reabrir o painel ainda recarregue tudo.
+        // Boot ciente de sessao (Area C): restaura se for o mesmo Photoshop,
+        // senao inicia no Estado_Inicial. bootDefault reproduz o antigo boot.
+        function bootDefault() { startDefaultScene(); setActiveTab('light'); renderTab(); }
+        if (window.LightRefSession && window.__lrStateApi) {
+            var initialRef = buildInitialSessionState();
+            try {
+                window.LightRefSession.restoreIfSameSession(initialRef, function (state) {
+                    if (state) { try { restoreSessionIntoScene(state); } catch (e) { bootDefault(); } }
+                    else { bootDefault(); }
+                });
+            } catch (e) { bootDefault(); }
+        } else { bootDefault(); }
+        // Wizard de primeiro uso (Area B): APOS o boot de sessao, para nunca
+        // sobrescrever a sessao restaurada. maybeShow so abre quando o
+        // onboarding ainda nao foi concluido; reabrir pela ajuda nao mexe na sessao.
+        var cfgBoot = {}; try { cfgBoot = LightRefStorage.readConfig(); } catch (eCfg) {}
+        var curLang = cfgBoot.language || 'pt';
+        if (window.LightRefOnboarding) {
+            try { window.LightRefOnboarding.onLanguageChosen(function (lang) { applyLanguage(lang); }); } catch (eOb1) {}
+            try { window.LightRefOnboarding.maybeShow(curLang); } catch (eOb2) {}
+        }
+        // Deteccao de oculto: pausa o render e descarrega o ultimo ajuste; ao
+        // reexibir retoma (bem abaixo de 1 s). Dois sinais: visibilitychange e
+        // blur/focus da janela (alguns Hosts nao emitem visibilitychange).
+        function onHidden() { try { if (scene) scene.suspendRender(); } catch (e) {} try { if (window.LightRefSession) window.LightRefSession.flush(); } catch (e2) {} }
+        function onVisible() { try { if (scene) scene.resumeRender(); } catch (e) {} }
+        document.addEventListener('visibilitychange', function () { if (document.hidden) onHidden(); else onVisible(); });
+        window.addEventListener('blur', onHidden);
+        window.addEventListener('focus', onVisible);
+        // Mantem o painel carregado ao minimizar, recolher ou fechar (melhor caso).
         if (window.LightRefToPhotoshop && window.LightRefToPhotoshop.keepPanelLoaded) window.LightRefToPhotoshop.keepPanelLoaded();
     });
 
     // Elemento onde as classes de estado (reference/collapsed) sao aplicadas.
     // O CSS usa "#lr04 .lr04-reference ..." entao a classe fica na .lr04-window.
     function stateHost() { return $('#lr04 .lr04-window'); }
+
+    // Aplica o idioma escolhido no wizard. A i18n completa do painel esta
+    // fora de escopo; aqui registramos a escolha (merge no config) sem
+    // quebrar nada. O onboarding.js tambem persiste ao concluir/fechar.
+    function applyLanguage(lang) {
+        if (lang !== 'pt' && lang !== 'en') return;
+        try { LightRefStorage.writeConfig({ language: lang }); } catch (e) {}
+    }
+
+    // ---------- Estado_da_Sessao: captura (Area C, tarefa 6) ----------
+    // Snapshot do Estado_da_Interface a partir do DOM/variaveis internas.
+    function sessionUiSnapshot() {
+        var host = stateHost();
+        var vp = document.querySelector('.lr04-viewport');
+        var env = document.getElementById('env-drawer-body');
+        return {
+            selectedLightId: selectedLightId,
+            hdrBackground: ((document.getElementById('ck-envbg') || {}).checked !== false),
+            page: currentPage,
+            tab: currentTab,
+            floor: floorOn,
+            guides: guidesOn,
+            reference: refOn,
+            collapsed: !!(host && host.classList.contains('lr04-collapsed')),
+            materialOpen: !!(vp && vp.classList.contains('lr04-matopen')),
+            envDrawerOpen: !!(env && !env.hasAttribute('hidden'))
+        };
+    }
+    // Monta o Estado_da_Sessao atual (modelo do #model-select + snapshot da UI).
+    function collectSessionStateNow() {
+        var ms = document.getElementById('model-select');
+        return collectSessionState(scene, ms ? ms.value : null, sessionUiSnapshot());
+    }
+    // Pede ao modulo de sessao para gravar (com debounce) o estado atual.
+    // Guardado (nao-invasivo): so age se LightRefSession e scene existirem.
+    function captureSession() {
+        try { if (scene && window.LightRefSession && window.LightRefSession.requestSave) window.LightRefSession.requestSave(collectSessionStateNow); } catch (e) {}
+    }
+    // Estado_Inicial de referencia (Estado_da_Sessao sv:3) usado so como
+    // fallback por campo da sanitizacao no boot.
+    function buildInitialSessionState() {
+        return {
+            sv: 3,
+            sessionToken: null,
+            scene: {
+                schema: 2,
+                model: MODELS[0].v,
+                rotation: { yaw: modelYaw(MODELS[0].v), pitch: 0, roll: 0 },
+                offset: { x: 0, y: 0, z: 0 },
+                scaleMult: 1,
+                background: { transparent: false, color: '#3a4a6a' },
+                lights: [ { name: 'Principal', color: '#f4f4f2', intensity: 1.2, azimuth: 45, elevation: 30, enabled: true, softness: 0, sourceSize: 0 } ],
+                fx: { exposure: 0, temperature: 0, contrast: 0, saturation: 1, blackWhite: 0, posterizeOn: false, posterizeLevels: 4, cutoutOn: false, cutoutLevels: 3 },
+                focal: 50,
+                projection: 'persp',
+                material: 'clay',
+                materialParams: {},
+                formColor: null,
+                environment: null,
+                envIntensity: 0.8
+            },
+            selectedLight: 0,
+            camera: { alpha: -1.5707, beta: 1.4279, radius: 5, target: { x: 0, y: 0.3, z: 0 } },
+            hdrBackground: true,
+            ui: { page: 'studio', tab: 'light', floor: true, guides: true, reference: false, collapsed: false, materialOpen: false, envDrawerOpen: false }
+        };
+    }
 
     function fillModelSelect() {
         var sel = $('#model-select'); if (!sel) return; sel.innerHTML = '';
@@ -267,13 +362,61 @@
         if (cfg.material) scene.setMaterial(cfg.material);
         if (cfg.environment && scene.setEnvironment) scene.setEnvironment(cfg.environment);
         if (cfg.bg && scene.setBackground) { scene.setBackground(cfg.bg.transparent ? 'transparent' : 'color', cfg.bg.color || '#3a4a6a'); var vp0 = $('.lr04-viewport'); if (vp0) vp0.classList.toggle('transparent', !!cfg.bg.transparent); }
+        // Composicao oculta, modelo principal visivel (independe de restaurar ou nao).
+        if (scene.setCompositionVisible) scene.setCompositionVisible(false);
+        if (scene.setMainModelVisible) scene.setMainModelVisible(true);
+        // Captura de orbita de camera (requestSave ja faz debounce).
+        try { if (scene.camera && scene.camera.onViewMatrixChangedObservable) scene.camera.onViewMatrixChangedObservable.add(function () { captureSession(); }); } catch (eCam) {}
+    }
+    // Estado_Inicial: Asaro + 1 luz padrao (comportamento historico do boot).
+    function startDefaultScene() {
         loadModelSafe(MODELS[0].v);   // sempre abre no Asaro (modelo padrao)
         var l = scene.lightManager.add({ name: nextLightName() });
         selectLight(l.id);
         syncMaterialPopover();
-        // Comeca na aba Luz: composicao oculta, modelo principal visivel.
-        if (scene.setCompositionVisible) scene.setCompositionVisible(false);
-        if (scene.setMainModelVisible) scene.setMainModelVisible(true);
+        captureSession();
+    }
+    // Restaura um Estado_da_Sessao validado no motor via applySessionState.
+    // Carrega SO o modelo salvo e as luzes exatas (sem luz padrao extra),
+    // honrando loadToken e mantendo o #loading-overlay ate o modelo terminar.
+    function restoreSessionIntoScene(state) {
+        if (!state) { startDefaultScene(); return; }
+        applySessionState(scene, state, {
+            loadModel: function (url, done, onFail) { loadModel(url, done, onFail); },
+            onModelValue: function (url) { var ms = $('#model-select'); if (ms) ms.value = url; },
+            onBackground: function (st) { var tr = st.background && st.background.transparent; var vp = $('.lr04-viewport'); if (vp) vp.classList.toggle('transparent', !!tr); },
+            feedback: feedback,
+            selectLightByIndex: function (idx) {
+                var list = scene.lightManager.lights;
+                if (idx != null && list.length) { var i = idx < 0 ? 0 : (idx > list.length - 1 ? list.length - 1 : idx); selectLight(list[i].id); }
+                else if (list.length) { selectLight(list[0].id); }
+                else { selectLight(null); }
+            },
+            applyUi: function (ui) { applyRestoredUi(ui); },
+            afterApply: function () { syncMaterialPopover(); renderTab(); }
+        });
+    }
+    // Aplica o Estado_da_Interface restaurado ao DOM e as variaveis internas.
+    function applyRestoredUi(ui) {
+        if (!ui) return;
+        try {
+            // Toggles do visor (chao/guias) + estado interno.
+            if (ui.floor != null) { floorOn = !!ui.floor; if (scene.setGroundVisible) scene.setGroundVisible(floorOn); var bf = document.querySelector('[data-toggle="floor"]'); if (bf) bf.setAttribute('aria-pressed', String(floorOn)); }
+            if (ui.guides != null) { guidesOn = !!ui.guides; if (scene.lightManager && scene.lightManager.setHelpersVisible) scene.lightManager.setHelpersVisible(guidesOn); var bg = document.querySelector('[data-toggle="guides"]'); if (bg) bg.setAttribute('aria-pressed', String(guidesOn)); }
+            var host = stateHost();
+            if (ui.reference != null) { refOn = !!ui.reference; if (host) host.classList.toggle('lr04-reference', refOn); var br = document.querySelector('[data-toggle="reference"]'); if (br) br.setAttribute('aria-pressed', String(refOn)); }
+            if (ui.collapsed != null && host) host.classList.toggle('lr04-collapsed', !!ui.collapsed);
+            // Popover de material.
+            var pop = $('.lr04-material'); var mtoggle = $('[data-toggle="materialOpen"]'); var vp = $('.lr04-viewport');
+            if (pop) { if (ui.materialOpen) { pop.removeAttribute('hidden'); if (vp) vp.classList.add('lr04-matopen'); } else { pop.setAttribute('hidden', ''); if (vp) vp.classList.remove('lr04-matopen'); } if (mtoggle) { mtoggle.setAttribute('aria-expanded', ui.materialOpen ? 'true' : 'false'); mtoggle.setAttribute('aria-pressed', ui.materialOpen ? 'true' : 'false'); } }
+            // Gaveta de ambiente/HDR.
+            var env = document.getElementById('env-drawer-body'); if (env) { if (ui.envDrawerOpen) env.removeAttribute('hidden'); else env.setAttribute('hidden', ''); }
+            // Pagina ativa.
+            if (ui.page) { currentPage = ui.page; $all('.lr04-footer nav button[data-page]').forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-page') === currentPage)); }); if (typeof showPage === 'function') showPage(currentPage); }
+            // Aba ativa (nao sobrepor com o default 'light').
+            if (ui.tab) { setActiveTab(ui.tab); }
+            setTimeout(function () { try { if (scene && scene.engine) scene.engine.resize(); } catch (e2) {} }, 80);
+        } catch (e) {}
     }
 
     function loadModelSafe(url) {
@@ -336,31 +479,40 @@
     }
     function footerLabel() { var v = (window.LightRefUpdate && window.LightRefUpdate.VERSION) ? window.LightRefUpdate.VERSION : '0.4'; return 'LightRef v' + v; }
     window.LightRefToast = function (msg) { feedback(msg, false); };
+    // Rotulo da Versao_Instalada; le LightRefUpdate.VERSION. Fallback 'v?' sem erro (Req 3.3).
+    function installedVersionLabel() { var v = (window.LightRefUpdate && window.LightRefUpdate.VERSION) ? window.LightRefUpdate.VERSION : null; return v ? ('v' + v) : 'v?'; }
+    // Verificacao_Manual: estado visual 'is-checking', aviso e check(true). Desfechos vem via LightRefToast/banner.
+    function runManualUpdateCheck(btn) { if (btn) btn.classList.add('is-checking'); feedback('Verificando atualizacoes...', false); if (window.LightRefUpdate) window.LightRefUpdate.check(true); setTimeout(function(){ if (btn) btn.classList.remove('is-checking'); }, 1200); }
     function setupUpdates() {
-        // A marca no rodape serve de botao de verificacao manual de update.
+        // Versao instalada no rodape (nao sobrescreve a marca; preserva #lr-version).
+        var ver = document.getElementById('lr-version');
+        if (ver) ver.textContent = installedVersionLabel();          // Req 3.1/3.2/3.3
+        // Botao de atualizacao: gatilho principal da Verificacao_Manual.
+        var ub = document.getElementById('btn-update');
+        if (ub) ub.addEventListener('click', function () { runManualUpdateCheck(ub); });  // Req 1.3, 2.1
+        // A marca no rodape permanece como gatilho secundario (sem alterar seu conteudo).
         var brand = $('.lr04-brand');
         if (brand) {
-            brand.textContent = 'LightRef';
             brand.style.cursor = 'pointer';
             brand.title = footerLabel() + ' - clique para verificar atualizacoes';
-            brand.addEventListener('click', function () {
-                if (window.LightRefUpdate) { feedback('Verificando atualizacoes...', false); window.LightRefUpdate.check(true); }
-            });
+            brand.addEventListener('click', function () { runManualUpdateCheck(ub); });  // Req 1.4
         }
-        setTimeout(function () { if (window.LightRefUpdate) window.LightRefUpdate.check(false); }, 1500);
+        // Verificacao automatica silenciosa logo apos o boot.
+        setTimeout(function () { if (window.LightRefUpdate) window.LightRefUpdate.check(false); }, 1500);  // Req 4.1
     }
 
     // ---------- Barra do meio (modelo + projecao + acoes de arquivo/export) ----------
     function bindMiddleBar() {
         var ms = $('#model-select');
         if (ms) ms.addEventListener('change', function () {
-            loadModel(this.value); try { LightRefStorage.writeConfig({ lastModel: this.value }); } catch (e) {}
+            loadModel(this.value, function () { captureSession(); }); try { LightRefStorage.writeConfig({ lastModel: this.value }); } catch (e) {}
         });
         $all('.lr04-projection button[data-projection]').forEach(function (b) {
             b.addEventListener('click', function () {
                 $all('.lr04-projection button[data-projection]').forEach(function (x){ x.setAttribute('aria-pressed','false'); });
                 this.setAttribute('aria-pressed','true');
                 scene.setProjection(this.getAttribute('data-projection') === 'ortho' ? 'ortho' : 'persp');
+                captureSession();
             });
         });
         bindAction('save', saveScenePrompt);
@@ -401,10 +553,10 @@
     var floorOn = true, guidesOn = true, refOn = false;
     function bindViewTools() {
         bindAction('reset-view', function () { scene.setCameraPreset('front'); });
-        bindToggle('floor', function (b) { floorOn = !floorOn; scene.setGroundVisible(floorOn); b.setAttribute('aria-pressed', floorOn); });
-        bindToggle('guides', function (b) { guidesOn = !guidesOn; scene.lightManager.setHelpersVisible(guidesOn); b.setAttribute('aria-pressed', guidesOn); });
-        bindToggle('reference', function (b) { refOn = !refOn; stateHost().classList.toggle('lr04-reference', refOn); b.setAttribute('aria-pressed', refOn); setTimeout(function(){ scene.engine.resize(); }, 80); });
-        bindAction('collapse', function () { stateHost().classList.toggle('lr04-collapsed'); setTimeout(function(){ scene.engine.resize(); }, 120); });
+        bindToggle('floor', function (b) { floorOn = !floorOn; scene.setGroundVisible(floorOn); b.setAttribute('aria-pressed', floorOn); captureSession(); });
+        bindToggle('guides', function (b) { guidesOn = !guidesOn; scene.lightManager.setHelpersVisible(guidesOn); b.setAttribute('aria-pressed', guidesOn); captureSession(); });
+        bindToggle('reference', function (b) { refOn = !refOn; stateHost().classList.toggle('lr04-reference', refOn); b.setAttribute('aria-pressed', refOn); setTimeout(function(){ scene.engine.resize(); }, 80); captureSession(); });
+        bindAction('collapse', function () { stateHost().classList.toggle('lr04-collapsed'); setTimeout(function(){ scene.engine.resize(); }, 120); captureSession(); });
         bindViewFxToggles();
     }
     function bindAction(name, fn) {
@@ -454,6 +606,7 @@
                 toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
                 toggle.setAttribute('aria-pressed', open ? 'true' : 'false');
                 var vp = $('.lr04-viewport'); if (vp) vp.classList.toggle('lr04-matopen', open);
+                captureSession();
             });
             document.addEventListener('click', function (e) {
                 if (!pop.hasAttribute('hidden') && !pop.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
@@ -467,9 +620,10 @@
             try { LightRefStorage.writeConfig({ material:this.value }); } catch (e) {}
             renderMaterialFields();
             feedback('Material: ' + this.options[this.selectedIndex].text);
+            captureSession();
         });
         var fc = $('.lr04-material input[data-setting="formColor"]');
-        if (fc) fc.addEventListener('input', function () { scene.setFormColor(this.value); });
+        if (fc) fc.addEventListener('input', function () { scene.setFormColor(this.value); captureSession(); });
         var sca = $('.lr04-material input[data-setting="scatter"]');
         if (sca) sca.addEventListener('input', function () { scene.setMaterialParam('scatter', this.value); });
         // Fundo: cor solida ou transparente (xadrez).
@@ -487,6 +641,7 @@
                 bgSaveTimer = null;
                 try { LightRefStorage.writeConfig({ bg: { transparent: !!tr, color: bgc ? bgc.value : '#3a4a6a' } }); } catch (e) {}
             }, 300);
+            captureSession();
         }
         if (bgc) bgc.addEventListener('input', applyBg);
         if (bgt) bgt.addEventListener('change', applyBg);
@@ -554,6 +709,7 @@
         $all('.lr04-tabs button').forEach(function (x){ x.setAttribute('aria-pressed', String(x.getAttribute('data-tab') === dom)); });
         // Mostra a section do pane ativo, esconde as demais.
         $all('.lr04-inspector section[data-pane]').forEach(function (p) { p.hidden = (p.getAttribute('data-pane') !== paneName(tab)); });
+        captureSession();
     }
     function bindTabs() {
         $all('.lr04-tabs button').forEach(function (b) {
@@ -601,6 +757,7 @@
                 onRange(r.id, r.value);
                 var o = document.getElementById(r.id + '-o');
                 if (o) o.textContent = r.value + (r.id==='sl-focal'?'mm':(r.id==='sl-azimuth'||r.id==='sl-elevation'||r.id==='sl-yaw'||r.id==='sl-roll'?'\u00b0':''));
+                captureSession();
             });
         });
     }
@@ -683,13 +840,15 @@
             var open = body.hasAttribute('hidden');
             if (open) body.removeAttribute('hidden'); else body.setAttribute('hidden','');
             head.setAttribute('aria-expanded', open ? 'true' : 'false');
+            captureSession();
         };
         var es = $('#env-select'); if (es) es.onchange = function () {
             var v = this.value;
             if (scene.setEnvironment) scene.setEnvironment(v || null, { showBackground: ($('#ck-envbg')||{}).checked !== false });
             try { LightRefStorage.writeConfig({ environment: v }); } catch (e) {}
+            captureSession();
         };
-        var ceb = $('#ck-envbg'); if (ceb) ceb.onchange = function () { if (scene.setEnvBackgroundVisible) scene.setEnvBackgroundVisible(this.checked); };
+        var ceb = $('#ck-envbg'); if (ceb) ceb.onchange = function () { if (scene.setEnvBackgroundVisible) scene.setEnvBackgroundVisible(this.checked); captureSession(); };
         wireRanges(body);
     }
 
@@ -910,6 +1069,7 @@
                 this.setAttribute('aria-pressed','true');
                 currentPage = this.getAttribute('data-page');
                 showPage(currentPage);
+                captureSession();
             });
         });
     }
@@ -1493,6 +1653,7 @@
     try {
         if (typeof window !== 'undefined' && window) {
             window.__lrColorApi = { chromeMajor: chromeMajor, shouldUsePsPicker: shouldUsePsPicker };
+            window.__lrUpdateUi = { installedVersionLabel: installedVersionLabel };
             window.__lrCatalogApi = {
                 defaultCatOf: defaultCatOf,
                 categoryExists: categoryExists,
@@ -1645,6 +1806,205 @@
         }
     }
 
+    // ---------- Estado_da_Sessao (sv:3) - Area C (Req 11.*, 15.1, 15.4, 15.7) ----------
+    // Superconjunto do Estado_Completo (schema 2) com camera, luz selecionada e
+    // Estado_da_Interface. Funcoes PURAS (nao tocam em document) para teste em Node.
+    // 'uiSnapshot' e um objeto simples montado pelo boot a partir do DOM.
+    function collectSessionState(sc, modelValue, uiSnapshot) {
+        var ui = uiSnapshot || {};
+        var sel = null;
+        try {
+            var lm = sc && sc.lightManager;
+            var list = lm && lm.lights;
+            if (list && ui.selectedLightId != null) {
+                for (var i = 0; i < list.length; i++) {
+                    if (list[i] && list[i].id === ui.selectedLightId) { sel = i; break; }
+                }
+            }
+        } catch (e1) { sel = null; }
+        var cam = null;
+        try { cam = sc && sc.getCameraState ? sc.getCameraState() : null; } catch (e2) { cam = null; }
+        return {
+            sv: 3,
+            sessionToken: null,
+            scene: collectSceneState(sc, modelValue),
+            selectedLight: sel,
+            hdrBackground: !!ui.hdrBackground,
+            ui: {
+                page: ui.page || 'studio',
+                tab: ui.tab || 'light',
+                floor: !!ui.floor,
+                guides: !!ui.guides,
+                reference: !!ui.reference,
+                collapsed: !!ui.collapsed,
+                materialOpen: !!ui.materialOpen,
+                envDrawerOpen: !!ui.envDrawerOpen
+            },
+            camera: cam
+        };
+    }
+
+    // Aplica o Estado_da_Sessao: delega ao applySceneState (modelo primeiro,
+    // trata falha, fallback item-a-item, sem duplicar luzes) e, no afterApply,
+    // aplica camera, hdrBackground, luz selecionada (com clamp) e a interface.
+    // opts aceita o mesmo shape de applyScene mais:
+    //   applyUi(uiObject)            - aplica o Estado_da_Interface.
+    //   selectLightByIndex(indexOrNull) - seleciona a luz na posicao salva.
+    function applySessionState(sc, state, opts) {
+        if (!state) return;
+        opts = opts || {};
+        applySceneState(sc, state.scene, {
+            loadModel: opts.loadModel,
+            onModelValue: opts.onModelValue,
+            onBackground: opts.onBackground,
+            feedback: opts.feedback,
+            afterApply: function () {
+                try { if (sc && sc.setCameraState) sc.setCameraState(state.camera); } catch (e1) {}
+                try { if (sc && sc.setEnvBackgroundVisible) sc.setEnvBackgroundVisible(!!state.hdrBackground); } catch (e2) {}
+                var idx = null;
+                try {
+                    var list = sc && sc.lightManager && sc.lightManager.lights;
+                    var n = list ? list.length : 0;
+                    var si = state.selectedLight;
+                    if (n > 0 && si != null && isFinite(si)) {
+                        idx = si < 0 ? 0 : (si > n - 1 ? n - 1 : si);
+                    } else {
+                        idx = null;
+                    }
+                } catch (e3) { idx = null; }
+                try { if (opts.selectLightByIndex) opts.selectLightByIndex(idx); } catch (e4) {}
+                try { if (opts.applyUi) opts.applyUi(state.ui); } catch (e5) {}
+                try { if (opts.afterApply) opts.afterApply(); } catch (e6) {}
+            }
+        });
+    }
+
+    // Sanitiza o Estado_da_Sessao lido do disco (Req 15.1, 15.4). PURA.
+    // Retorna null se 'raw' nao e objeto simples ou raw.sv !== 3; senao devolve
+    // uma copia limpa com fallback por campo em 'initial' (Estado_Inicial).
+    // Nunca lanca; campos extras desconhecidos sao descartados.
+    function sanitizeSessionState(raw, initial) {
+        if (!raw || typeof raw !== 'object' || _isArr(raw)) return null;
+        if (raw.sv !== 3) return null;
+        initial = initial || {};
+        var iniScene = initial.scene || {};
+        var iniUi = initial.ui || {};
+        var iniCam = initial.camera || {};
+        var rawScene = (raw.scene && typeof raw.scene === 'object' && !_isArr(raw.scene)) ? raw.scene : {};
+        var rawUi = (raw.ui && typeof raw.ui === 'object' && !_isArr(raw.ui)) ? raw.ui : {};
+        var rawCam = (raw.camera && typeof raw.camera === 'object' && !_isArr(raw.camera)) ? raw.camera : null;
+        // scene: valida campo a campo com o initial.scene como fallback.
+        var scene = {
+            schema: 2,
+            model: _pickStr(rawScene.model, (iniScene.model != null ? iniScene.model : null)),
+            rotation: _cleanVec3(rawScene.rotation, iniScene.rotation, ['yaw', 'pitch', 'roll']),
+            offset: _cleanVec3(rawScene.offset, iniScene.offset, ['x', 'y', 'z']),
+            scaleMult: _pickNum(rawScene.scaleMult, iniScene.scaleMult),
+            background: _cleanBackground(rawScene.background, iniScene.background),
+            lights: _cleanLights(rawScene.lights, iniScene.lights),
+            fx: _cleanObjNums(rawScene.fx, iniScene.fx),
+            focal: _pickNum(rawScene.focal, iniScene.focal),
+            projection: _pickStr(rawScene.projection, iniScene.projection),
+            material: _pickStr(rawScene.material, iniScene.material),
+            materialParams: _cleanObjNums(rawScene.materialParams, iniScene.materialParams),
+            formColor: _pickStrOrNull(rawScene.formColor, (iniScene.formColor != null ? iniScene.formColor : null)),
+            environment: _pickStrOrNull(rawScene.environment, (iniScene.environment != null ? iniScene.environment : null)),
+            envIntensity: _pickNum(rawScene.envIntensity, iniScene.envIntensity)
+        };
+        // selectedLight: inteiro >= 0 ou null.
+        var sel = raw.selectedLight;
+        if (!(typeof sel === 'number' && isFinite(sel) && Math.floor(sel) === sel && sel >= 0)) sel = null;
+        // camera.
+        var camera;
+        if (rawCam) {
+            camera = {
+                alpha: _pickNum(rawCam.alpha, iniCam.alpha),
+                beta: _pickNum(rawCam.beta, iniCam.beta),
+                radius: _pickNum(rawCam.radius, iniCam.radius),
+                target: _cleanVec3(rawCam.target, iniCam.target, ['x', 'y', 'z'])
+            };
+        } else {
+            camera = (initial.camera != null) ? initial.camera : null;
+        }
+        return {
+            sv: 3,
+            sessionToken: _pickStrOrNull(raw.sessionToken, (initial.sessionToken != null ? initial.sessionToken : null)),
+            scene: scene,
+            selectedLight: sel,
+            hdrBackground: _pickBool(raw.hdrBackground, iniUi.hdrBackground != null ? iniUi.hdrBackground : initial.hdrBackground),
+            ui: {
+                page: _pickStr(rawUi.page, iniUi.page),
+                tab: _pickStr(rawUi.tab, iniUi.tab),
+                floor: _pickBool(rawUi.floor, iniUi.floor),
+                guides: _pickBool(rawUi.guides, iniUi.guides),
+                reference: _pickBool(rawUi.reference, iniUi.reference),
+                collapsed: _pickBool(rawUi.collapsed, iniUi.collapsed),
+                materialOpen: _pickBool(rawUi.materialOpen, iniUi.materialOpen),
+                envDrawerOpen: _pickBool(rawUi.envDrawerOpen, iniUi.envDrawerOpen)
+            },
+            camera: camera
+        };
+    }
+
+    // Helpers de sanitizacao (puros). Escolhem o valor valido ou o fallback.
+    function _isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+    function _has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+    function _pickNum(v, fb) { return (typeof v === 'number' && isFinite(v)) ? v : fb; }
+    function _pickStr(v, fb) { return (typeof v === 'string') ? v : fb; }
+    function _pickStrOrNull(v, fb) { if (typeof v === 'string') return v; if (v === null) return null; return fb; }
+    function _pickBool(v, fb) { return (typeof v === 'boolean') ? v : !!fb; }
+    function _cleanVec3(v, fb, keys) {
+        fb = fb || {};
+        var src = (v && typeof v === 'object' && !_isArr(v)) ? v : {};
+        var out = {};
+        for (var i = 0; i < keys.length; i++) { var k = keys[i]; out[k] = _pickNum(src[k], _pickNum(fb[k], 0)); }
+        return out;
+    }
+    function _cleanBackground(v, fb) {
+        fb = fb || {};
+        var src = (v && typeof v === 'object' && !_isArr(v)) ? v : {};
+        return {
+            transparent: _pickBool(src.transparent, fb.transparent),
+            color: _pickStr(src.color, (fb.color != null ? fb.color : '#3a4a6a'))
+        };
+    }
+    function _cleanObjNums(v, fb) {
+        var out = {};
+        var base = (fb && typeof fb === 'object' && !_isArr(fb)) ? fb : {};
+        var src = (v && typeof v === 'object' && !_isArr(v)) ? v : {};
+        var k;
+        for (k in base) if (_has(base, k)) {
+            if (typeof base[k] === 'boolean') out[k] = _pickBool(src[k], base[k]);
+            else if (typeof base[k] === 'number') out[k] = _pickNum(src[k], base[k]);
+            else out[k] = (src[k] !== undefined) ? src[k] : base[k];
+        }
+        for (k in src) if (_has(src, k) && !_has(out, k)) {
+            if (typeof src[k] === 'number') { if (isFinite(src[k])) out[k] = src[k]; }
+            else if (typeof src[k] === 'boolean') out[k] = src[k];
+        }
+        return out;
+    }
+    function _cleanLights(v, fb) {
+        if (_isArr(v)) {
+            var out = [];
+            for (var i = 0; i < v.length; i++) {
+                var l = v[i]; if (!l || typeof l !== 'object' || _isArr(l)) continue;
+                out.push({
+                    name: _pickStr(l.name, ''),
+                    color: _pickStr(l.color, '#f4f4f2'),
+                    intensity: _pickNum(l.intensity, 1),
+                    azimuth: _pickNum(l.azimuth, 0),
+                    elevation: _pickNum(l.elevation, 0),
+                    enabled: _pickBool(l.enabled, true),
+                    softness: _pickNum(l.softness, 0),
+                    sourceSize: _pickNum(l.sourceSize, 0)
+                });
+            }
+            return out;
+        }
+        return _isArr(fb) ? fb.slice() : [];
+    }
+
     function collectState() {
         var ms = $('#model-select');
         return collectSceneState(scene, ms ? ms.value : null);
@@ -1662,13 +2022,14 @@
                 selectLight(scene.lightManager.lights.length ? scene.lightManager.lights[0].id : null);
                 syncMaterialPopover();
                 renderTab();
+                captureSession();
             }
         });
     }
 
     // Exposto para testes em Node (round-trip do Estado_Completo). So quando ha
     // 'window' (no CEF sempre ha; em Node os testes criam um window fake).
-    try { if (typeof window !== 'undefined' && window) window.__lrStateApi = { collectSceneState: collectSceneState, applySceneState: applySceneState }; } catch (e) {}
+    try { if (typeof window !== 'undefined' && window) window.__lrStateApi = { collectSceneState: collectSceneState, applySceneState: applySceneState, collectSessionState: collectSessionState, applySessionState: applySessionState, sanitizeSessionState: sanitizeSessionState }; } catch (e) {}
 
 })();
 
