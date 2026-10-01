@@ -1,5 +1,5 @@
 /*
- * to-photoshop.js — ponte painel -> Photoshop (LightRef).
+ * to-photoshop.js - ponte painel -> Photoshop (LightRef).
  *
  * Fluxo do "jogar como layer":
  *   1. scene.snapshotDataURL() gera um PNG em base64 do canvas WebGL
@@ -43,7 +43,7 @@
 
     /*
      * Grava o render em disco e pede ao Photoshop para coloca-lo como layer.
-     * dataURL: PNG com os efeitos aplicados (modo raster) — usado sempre para o pixel.
+     * dataURL: PNG com os efeitos aplicados (modo raster) - usado sempre para o pixel.
      * opts: { mode: 'raster'|'adjustment', fx: {...}, rawDataURL: string }
      *   - raster: coloca uma unica camada rasterizada com tudo queimado
      *   - adjustment: coloca o PNG cru (rawDataURL) e cria adjustment layers a partir de fx
@@ -86,8 +86,49 @@
         });
     }
 
+    /*
+     * Abre o Seletor de Cores nativo do Photoshop (lightrefPickColor no init.jsx).
+     * hex: cor inicial ('#rrggbb' ou 'rrggbb').
+     * callback(err, color): color e '#rrggbb', ou null se o usuario cancelar.
+     */
+    function pickColor(hex, callback) {
+        var cs;
+        try { cs = new CSInterface(); } catch (e) { return callback(e); }
+        var h = String(hex || '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+        cs.evalScript("lightrefPickColor('" + h + "')", function (result) {
+            var r = (result === undefined || result === null) ? '' : String(result);
+            if (r.indexOf('ERRO') === 0 || r === 'EvalScript error.') return callback(new Error(r));
+            if (r === '') return callback(null, null);
+            if (!/^[0-9a-fA-F]{6}$/.test(r)) return callback(new Error('Resposta invalida: ' + r));
+            callback(null, '#' + r.toLowerCase());
+        });
+    }
+
+    /*
+     * Pede ao Photoshop para manter o painel carregado quando ele e minimizado,
+     * recolhido ou fechado (com.adobe.PhotoshopPersistent, Photoshop 14.2+).
+     * Assim os ajustes so voltam ao padrao quando o Photoshop e fechado.
+     * Retorna true se o pedido foi enviado.
+     */
+    function keepPanelLoaded() {
+        try {
+            if (typeof CSInterface === 'undefined' || typeof CSEvent === 'undefined') return false;
+            var cs = new CSInterface();
+            var id = cs.getExtensionID();
+            if (!id) return false;
+            var ev = new CSEvent('com.adobe.PhotoshopPersistent', 'APPLICATION');
+            ev.extensionId = id;
+            cs.dispatchEvent(ev);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     global.LightRefToPhotoshop = {
         placeAsLayer: placeAsLayer,
+        pickColor: pickColor,
+        keepPanelLoaded: keepPanelLoaded,
         appDataDir: appDataDir
     };
 })(window);

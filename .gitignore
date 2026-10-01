@@ -33,3 +33,5 @@ lightref-v04-atualizado.html
 com.lightref.cep/_thumbgen.html
 com.lightref.cep/index.css.bak
 com.lightref.cep/index.html.bak
+build_*/**/*.zip
+build_*/**/*.exe

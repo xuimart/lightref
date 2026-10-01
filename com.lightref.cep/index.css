@@ -133,3 +133,6 @@ body { display: flex; }
 #lr04 .lr04-card.lr04-dragging{opacity:.5;outline:1px dashed #6f7681;outline-offset:-2px}
 #lr04 .lr04-drawer.lr04-dropok{border-color:var(--lr-accent,#5b8def);box-shadow:0 0 0 1px var(--lr-accent,#5b8def) inset}
 #lr04 .lr04-drawer.lr04-dropok .lr04-drawerhead{background:#2a3340}
+
+/* Fallback de inset para CEF antigo */
+#lr04 .loading-overlay,#lr04 .lr04-modal,#lr04 #lf-checker,#lr04 canvas{top:0;right:0;bottom:0;left:0}

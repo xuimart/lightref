@@ -1,5 +1,5 @@
 /*
- * onboarding.js — wizard de primeiro uso do LightRef (padrao Xuimart).
+ * onboarding.js - wizard de primeiro uso do LightRef (padrao Xuimart).
  *
  * Modal full-panel com o mascote Xuimzinho guiando o usuario. Aparece so na
  * primeira execucao (config.onboardingCompleted). Pode ser reaberto pelo botao

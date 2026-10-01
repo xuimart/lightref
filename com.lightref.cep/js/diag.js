@@ -7,6 +7,28 @@
     window.addEventListener('error', function (e) {
         errors.push(String(e.message) + ' @' + String(e.filename || '').split('/').pop() + ':' + e.lineno);
     });
+    window.addEventListener('unhandledrejection', function (e) {
+        var r = e && e.reason;
+        errors.push('promise: ' + String((r && (r.message || r)) || 'rejeitada'));
+    });
+    // Estado do motor 3D (ajuda a diagnosticar o CEF antigo do Photoshop 2019/2020).
+    function engineInfo() {
+        var info = {};
+        try {
+            var B = window.BABYLON;
+            info.babylon = B ? (B.Engine && B.Engine.Version) : 'AUSENTE';
+            if (B && B.SceneLoader && B.SceneLoader.IsPluginForExtensionAvailable) {
+                info.pluginObj = B.SceneLoader.IsPluginForExtensionAvailable('.obj');
+                info.pluginStl = B.SceneLoader.IsPluginForExtensionAvailable('.stl');
+            }
+            var eng = B && B.EngineStore && B.EngineStore.LastCreatedEngine;
+            if (eng) {
+                info.webgl = eng.webGLVersion;
+                try { var gi = eng.getGlInfo(); info.renderer = gi.renderer; info.glVersion = gi.version; } catch (e1) {}
+            }
+        } catch (e) { info.erro = String(e.message || e); }
+        return info;
+    }
     function rectOf(sel) {
         var el = document.querySelector(sel);
         if (!el) return sel + ' MISSING';
@@ -37,11 +59,19 @@
                 sheets: sheets,
                 layout: ['#lr04', '.lr04-window', '.lr04-studio', '.lr04-viewport', '.lr04-middle', '.lr04-inspector',
                          '.lr04-footer', '.lr04-catalog', '#gl-canvas', '.lr04-toptools'].map(rectOf),
-                errors: errors
+                errors: errors,
+                engine: engineInfo(),
+                polyfilled: window.__lrPolyfilled || [],
+                loadErrors: window.__lrLoadErrors || []
             };
-            fs.writeFileSync(path.join(dir, 'diag.json'), JSON.stringify(report, null, 2));
+            var json = JSON.stringify(report, null, 2);
+            fs.writeFileSync(path.join(dir, 'diag.json'), json);
+            // Um arquivo por versao do Chrome: o Photoshop novo nao sobrescreve o do antigo.
+            var m = /Chrome\/(\d+)/.exec(navigator.userAgent);
+            fs.writeFileSync(path.join(dir, 'diag-chrome' + (m ? m[1] : 'x') + '.json'), json);
         } catch (e) { /* sem Node (navegador comum): ignora */ }
     }
+    window.__lrDiagWrite = write;
     window.addEventListener('load', function () { setTimeout(write, 2500); });
     var t = 0;
     window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(write, 800); });

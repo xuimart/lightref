@@ -10,10 +10,10 @@
 -->
 <ExtensionManifest Version="6.0"
     ExtensionBundleId="com.lightref"
-    ExtensionBundleVersion="0.5.0"
+    ExtensionBundleVersion="0.6.0"
     ExtensionBundleName="LightRef">
   <ExtensionList>
-    <Extension Id="com.lightref.panel" Version="0.5.0" />
+    <Extension Id="com.lightref.panel" Version="0.6.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -22,7 +22,7 @@
     </HostList>
     <LocaleList><Locale Code="All" /></LocaleList>
     <RequiredRuntimeList>
-      <RequiredRuntime Name="CSXS" Version="8.0" />
+      <RequiredRuntime Name="CSXS" Version="6.0" />
     </RequiredRuntimeList>
   </ExecutionEnvironment>
   <DispatchInfoList>

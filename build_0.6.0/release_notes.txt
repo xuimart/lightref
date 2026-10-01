@@ -1,0 +1,14 @@
+LightRef v0.6.0
+
+Novidades desta versao:
+- Um unico instalador funciona do Photoshop 2019 ate as versoes atuais (compatibilidade com o CEF antigo do Photoshop 2019/2020).
+- O painel nao perde mais os ajustes ao ser minimizado, recolhido ou fechado. Ele so volta ao padrao quando o Photoshop e fechado.
+- No Photoshop 2019/2020 os campos de cor (luz, material, scatter e fundo) abrem o Seletor de Cores nativo do Photoshop.
+- Icones da interface corrigidos no Photoshop antigo.
+- Modelos carregam de qualquer pasta de instalacao.
+- Mensagens de erro mais claras ao carregar modelos e diagnostico por versao em %APPDATA%\LightRef.
+- Novo icone do LightRef no painel e no instalador.
+
+Requisitos: Windows e Photoshop 2019 (20.0) ou superior.
+
+Instalacao: baixe e execute LightRef_Setup.exe (pede permissao de administrador). Depois abra o Photoshop em Janela > Extensoes > LightRef.

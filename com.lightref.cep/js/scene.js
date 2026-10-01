@@ -421,23 +421,45 @@
         return this._matParams || this._defaultParams(this._materialType || 'clay');
     };
 
+    // Resolve um caminho (relativo ou file:///) para uma URL file:// ABSOLUTA e
+    // devidamente encodada. Necessario porque o plugin pode rodar de pastas com
+    // espacos/parenteses (ex.: 'C:/Program Files (x86)/Common Files/...'), onde o
+    // Babylon falhava ao concatenar rootUrl relativo (fetch 404 do .obj).
+    Scene.prototype._resolveAssetURL = function (url) {
+        var u = String(url);
+        // Ja tem esquema (file:, blob:, data:, http:...). Mantem.
+        if (/^[a-z][a-z0-9+.\-]*:/i.test(u)) return u;
+        // Caminho relativo: resolve contra a pasta do index.html (location.href).
+        var baseHref = (global.location && global.location.href) ? global.location.href : '';
+        var baseDir = baseHref.substring(0, baseHref.lastIndexOf('/') + 1); // tira o index.html
+        // Encoda cada segmento do caminho relativo (espacos -> %20, etc), sem
+        // encodar as barras. encodeURI nao encoda '(' ')', mas o CEF aceita; o
+        // critico sao os espacos, que encodeURI resolve.
+        var rel = u.split('/').map(function (seg) { return encodeURIComponent(seg); }).join('/');
+        return baseDir + rel;
+    };
+
     // ---------- Carregar modelo ----------
     Scene.prototype.loadOBJ = function (url, onProgress, onDone) {
         var self = this;
         var lower = String(url).toLowerCase().split('?')[0];
         var ext = /\.glb$/.test(lower) ? '.glb' : (/\.gltf$/.test(lower) ? '.gltf' : (/\.stl$/.test(lower) ? '.stl' : '.obj'));
-        // Separa base e arquivo para o ImportMesh.
-        var idx = url.lastIndexOf('/');
-        var rootUrl = url.substring(0, idx + 1);
-        var fileName = url.substring(idx + 1);
+        // Resolve para URL absoluta encodada (robusto a pastas com espacos).
+        var abs = this._resolveAssetURL(url);
+        var idx = abs.lastIndexOf('/');
+        var rootUrl = abs.substring(0, idx + 1);
+        var fileName = abs.substring(idx + 1);
 
         this._currentLoadUrl = url;
         BABYLON.SceneLoader.ImportMesh('', rootUrl, fileName, this.scene, function (meshes) {
             self._installModel(meshes, onDone);
         }, function (evt) {
             if (onProgress && evt.lengthComputable) onProgress(Math.round((evt.loaded / evt.total) * 100));
-        }, function (scene, msg) {
-            if (onDone) onDone(new Error(msg || 'Falha ao carregar o modelo'));
+        }, function (scene, msg, ex) {
+            // Inclui a excecao original (ajuda a diagnosticar CEF antigo).
+            var m = msg || (ex && ex.message) || 'Falha ao carregar o modelo';
+            if (ex && ex.message && String(m).indexOf(ex.message) < 0) m += ' | ' + ex.message;
+            if (onDone) onDone(new Error(m));
         }, ext);
     };
 
@@ -849,9 +871,10 @@
     // Compartilha o material atual. NAO mexe no modelo principal.
     Scene.prototype.addSceneObject = function (url, onDone) {
         var self = this;
-        var idx = url.lastIndexOf('/');
-        var rootUrl = url.substring(0, idx + 1);
-        var fileName = url.substring(idx + 1);
+        var abs = this._resolveAssetURL(url);
+        var idx = abs.lastIndexOf('/');
+        var rootUrl = abs.substring(0, idx + 1);
+        var fileName = abs.substring(idx + 1);
         BABYLON.SceneLoader.ImportMesh('', rootUrl, fileName, this.scene, function (meshes) {
           try {
             var id = self._objId++;

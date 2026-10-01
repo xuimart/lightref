@@ -186,6 +186,7 @@
         bindPages();
         bindDialog();
         bindMaterialPopover();
+        bindColorInputs();
         setupUpdates();
         bindLightKeys();
         bindCompKeys();
@@ -215,6 +216,10 @@
         setActiveTab('light');
         refreshIcons();
         renderTab();
+        // Mantem o painel carregado ao minimizar, recolher ou fechar: os ajustes
+        // so voltam ao padrao quando o Photoshop fecha. Fica no fim do init para
+        // que, se algo falhar antes, reabrir o painel ainda recarregue tudo.
+        if (window.LightRefToPhotoshop && window.LightRefToPhotoshop.keepPanelLoaded) window.LightRefToPhotoshop.keepPanelLoaded();
     });
 
     // Elemento onde as classes de estado (reference/collapsed) sao aplicadas.
@@ -290,7 +295,12 @@
             if (myToken !== loadToken) { return; }
             loadingNow = false;
             showLoading(false);
-            if (err) { feedback('Falha ao carregar', true); if (onFail) onFail(err); return; }
+            if (err) {
+                var em = (err && err.message) ? String(err.message) : '';
+                feedback('Falha ao carregar' + (em ? ': ' + em.slice(0, 160) : ''), true);
+                try { (window.__lrLoadErrors = window.__lrLoadErrors || []).push({ url: url, msg: em }); if (window.__lrDiagWrite) window.__lrDiagWrite(); } catch (e0) {}
+                if (onFail) onFail(err); return;
+            }
             currentModelUrl = url;
             // Restaura ajustes salvos deste modelo; se nao houver, usa o yaw padrao.
             if (!restoreModelXform(url)) { var y = modelYaw(url); if (y && scene.setModelRotation) scene.setModelRotation(y, 0); }
@@ -322,7 +332,7 @@
         var f = $('.lr04-notice'); if (!f) return;
         f.textContent = msg; f.style.color = err ? '#ff6a6a' : '#8fd39a';
         clearTimeout(feedback._t);
-        feedback._t = setTimeout(function(){ f.textContent = ''; f.style.color=''; }, 3500);
+        feedback._t = setTimeout(function(){ f.textContent = ''; f.style.color=''; }, err ? 15000 : 3500);
     }
     function footerLabel() { var v = (window.LightRefUpdate && window.LightRefUpdate.VERSION) ? window.LightRefUpdate.VERSION : '0.4'; return 'LightRef v' + v; }
     window.LightRefToast = function (msg) { feedback(msg, false); };
@@ -482,6 +492,40 @@
         if (bgt) bgt.addEventListener('change', applyBg);
         renderMaterialFields();
     }
+    // ---------- Seletor de cor ----------
+    // O <input type="color"> nao abre no CEF antigo (Photoshop 2019/2020,
+    // Chromium < 99). Nesses casos o clique abre o Seletor de Cores nativo do
+    // Photoshop e o valor escolhido volta para o input, disparando os mesmos
+    // eventos 'input'/'change' que os handlers ja usam. No CEF novo nada muda.
+    function chromeMajor(ua) { var m = /Chrome\/(\d+)/.exec(String(ua || '')); return m ? parseInt(m[1], 10) : 0; }
+    function shouldUsePsPicker(ua, inCep) { return !!inCep && chromeMajor(ua) < 99; }
+    function fireInput(el) {
+        ['input', 'change'].forEach(function (type) {
+            var ev = document.createEvent('HTMLEvents');
+            ev.initEvent(type, true, false);
+            el.dispatchEvent(ev);
+        });
+    }
+    function bindColorInputs() {
+        var inCep = (typeof window.__adobe_cep__ !== 'undefined') && !!(window.LightRefToPhotoshop && window.LightRefToPhotoshop.pickColor);
+        if (!shouldUsePsPicker(navigator.userAgent, inCep)) return;
+        var busy = false;
+        document.addEventListener('click', function (e) {
+            var el = e.target;
+            if (!el || el.tagName !== 'INPUT' || String(el.type).toLowerCase() !== 'color') return;
+            e.preventDefault();
+            if (busy) return;
+            busy = true;
+            window.LightRefToPhotoshop.pickColor(el.value, function (err, color) {
+                busy = false;
+                if (err) { feedback('Nao foi possivel abrir o seletor de cores do Photoshop', true); return; }
+                if (!color) return; // cancelado
+                el.value = color;
+                fireInput(el);
+            });
+        }, true);
+    }
+
     function syncMaterialPopover() {
         var msel = $('.lr04-material select[data-setting="material"]'); if (msel && scene.getMaterial) msel.value = scene.getMaterial();
         var fc = $('.lr04-material input[data-setting="formColor"]'); if (fc && scene.getFormColor) fc.value = scene.getFormColor();
@@ -1448,6 +1492,7 @@
     // quando ha 'window'. As funcoes puras nao dependem de DOM.
     try {
         if (typeof window !== 'undefined' && window) {
+            window.__lrColorApi = { chromeMajor: chromeMajor, shouldUsePsPicker: shouldUsePsPicker };
             window.__lrCatalogApi = {
                 defaultCatOf: defaultCatOf,
                 categoryExists: categoryExists,

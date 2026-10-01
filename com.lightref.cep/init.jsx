@@ -1,4 +1,4 @@
-// init.jsx — ExtendScript do LightRef (host Photoshop).
+// init.jsx - ExtendScript do LightRef (host Photoshop).
 // Roda no interpretador ExtendScript do Photoshop (nao no CEF do painel).
 // Funcao principal: pegar um PNG salvo em disco pelo painel e coloca-lo como
 // uma nova layer no documento ativo.
@@ -30,6 +30,26 @@ function lightrefPlaceRender(pngPath) {
 
         return "OK";
     } catch (e) {
+        return "ERRO: " + e.toString();
+    }
+}
+
+// Abre o Seletor de Cores nativo do Photoshop com a cor inicial hex ("RRGGBB").
+// Retorna a cor escolhida em hex, "" se o usuario cancelar, ou "ERRO: ...".
+// O seletor usa a cor de primeiro plano, entao salvamos e restauramos a do usuario.
+function lightrefPickColor(hex) {
+    var saved = null;
+    try {
+        saved = app.foregroundColor;
+        var c = new SolidColor();
+        c.rgb.hexValue = String(hex || "ffffff").replace(/^#/, "");
+        app.foregroundColor = c;
+        var ok = app.showColorPicker();
+        var result = ok ? app.foregroundColor.rgb.hexValue : "";
+        app.foregroundColor = saved;
+        return result;
+    } catch (e) {
+        try { if (saved) app.foregroundColor = saved; } catch (e2) {}
         return "ERRO: " + e.toString();
     }
 }
