@@ -7,8 +7,23 @@
 (function (global) {
     'use strict';
 
+    // Helper de traducao com fallback PT embutido (identico ao antigo texto).
+    function _t(key, vars) {
+        if (global.LightRefI18n && global.LightRefI18n.t) return global.LightRefI18n.t(key, vars);
+        var fb = {
+            updTitle: 'Atualizacao {versao}',
+            updDownload: 'Baixar atualizacao',
+            updClose: 'Fechar',
+            updFail: 'Nao foi possivel verificar atualizacoes.',
+            updCurrent: 'Voce ja esta na versao mais recente ({versao}).'
+        };
+        var s = (key in fb) ? fb[key] : key;
+        if (vars) { for (var k in vars) { if (Object.prototype.hasOwnProperty.call(vars, k)) { s = s.split('{'+k+'}').join(String(vars[k])); } } }
+        return s;
+    }
+
     // Versao compilada deste build. Bump a cada release (ver SISTEMA_DE_UPDATE).
-    var LIGHTREF_VERSION = '0.8.0';
+    var LIGHTREF_VERSION = '0.9.0';
 
     // Fonte da verdade para "existe versao nova?".
     var VERSION_URL = 'https://www.xuimart.com.br/lightref/version.json';
@@ -76,11 +91,11 @@
         var url = info.downloadUrl || FALLBACK_DOWNLOAD;
         wrap.innerHTML =
             '<div class="lf-upd-row">' +
-              '<strong>Atualizacao ' + ver + '</strong>' +
-              '<button class="lf-upd-x" title="Fechar" aria-label="Fechar">&times;</button>' +
+              '<strong>' + _t('updTitle', { versao: ver }) + '</strong>' +
+              '<button class="lf-upd-x" title="' + _t('updClose') + '" aria-label="' + _t('updClose') + '">&times;</button>' +
             '</div>' +
             '<div class="lf-upd-log"></div>' +
-            '<button class="lf-upd-dl">Baixar atualizacao</button>';
+            '<button class="lf-upd-dl">' + _t('updDownload') + '</button>';
         wrap.querySelector('.lf-upd-log').textContent = log;
         wrap.querySelector('.lf-upd-dl').addEventListener('click', function () { openExternal(url); });
         wrap.querySelector('.lf-upd-x').addEventListener('click', function () {
@@ -116,14 +131,14 @@
         check: function (manual) {
             fetchJson(VERSION_URL, function (err, info) {
                 if (err || !info || !info.version) {
-                    if (manual && global.LightRefToast) global.LightRefToast('Nao foi possivel verificar atualizacoes.');
+                    if (manual && global.LightRefToast) global.LightRefToast(_t('updFail'));
                     return;
                 }
                 var outcome = decideUpdateOutcome(info.version, LIGHTREF_VERSION, manual);
                 if (outcome === 'banner') {
                     showBanner(info);
                 } else if (outcome === 'current' && global.LightRefToast) {
-                    global.LightRefToast('Voce ja esta na versao mais recente (' + LIGHTREF_VERSION + ').');
+                    global.LightRefToast(_t('updCurrent', { versao: LIGHTREF_VERSION }));
                 }
             });
         }
