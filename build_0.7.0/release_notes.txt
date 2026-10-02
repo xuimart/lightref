@@ -1,0 +1,10 @@
+LightRef v0.7.0 (build de teste)
+
+Novidades desta versao:
+- O painel nao perde mais os ajustes ao ser minimizado, recolhido ou fechado: eles sao salvos e restaurados enquanto o Photoshop estiver aberto. So voltam ao padrao quando o Photoshop e fechado.
+- Botao "Atualizar" no rodape, com a versao instalada ao lado, para verificar novas versoes quando quiser.
+- Guia de primeiro uso (Xuimzinho) reativado, com escolha de idioma; pode ser reaberto pelo botao de ajuda no visor.
+
+Continua funcionando do Photoshop 2019 ate as versoes atuais.
+
+Instalacao: feche o Photoshop, execute LightRef_Setup.exe (pede administrador) e abra o Photoshop em Janela > Extensoes > LightRef.
