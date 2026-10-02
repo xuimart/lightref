@@ -217,6 +217,8 @@
             if (phase === 'end' && currentTab === 'light') renderTab();
         });
         refreshIcons();
+        setupHelpMenu();
+        setupShortcutsModal();
         // Boot ciente de sessao (Area C): restaura se for o mesmo Photoshop,
         // senao inicia no Estado_Inicial. bootDefault reproduz o antigo boot.
         function bootDefault() { startDefaultScene(); setActiveTab('light'); renderTab(); }
@@ -249,6 +251,76 @@
         // Mantem o painel carregado ao minimizar, recolher ou fechar (melhor caso).
         if (window.LightRefToPhotoshop && window.LightRefToPhotoshop.keepPanelLoaded) window.LightRefToPhotoshop.keepPanelLoaded();
     });
+
+    // ---------- Ajuda: menu e lista de atalhos (shortcuts-help) ----------
+    function setupHelpMenu() {
+        var btn = document.getElementById('btn-help');
+        var menu = document.getElementById('help-menu');
+        if (!btn || !menu) return;
+        btn.setAttribute('aria-haspopup', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+        function openMenu() {
+            menu.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            var first = menu.querySelector('.lr04-helpmenu-item');
+            if (first && first.focus) first.focus();
+        }
+        function closeMenu() {
+            if (menu.hidden) return;
+            menu.hidden = true;
+            btn.setAttribute('aria-expanded', 'false');
+        }
+        function toggleMenu() { if (menu.hidden) openMenu(); else closeMenu(); }
+        btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });
+        document.addEventListener('click', function (e) {
+            if (menu.hidden) return;
+            if (menu.contains(e.target) || e.target === btn) return;
+            closeMenu();
+        });
+        document.addEventListener('keydown', function (e) {
+            if ((e.key === 'Escape' || e.code === 'Escape') && !menu.hidden) closeMenu();
+        });
+        var items = menu.querySelectorAll('.lr04-helpmenu-item');
+        for (var i = 0; i < items.length; i++) {
+            items[i].addEventListener('click', function (e) {
+                e.stopPropagation();
+                var what = this.getAttribute('data-help');
+                closeMenu();
+                if (what === 'intro') {
+                    if (window.LightRefOnboarding && window.LightRefOnboarding.open) {
+                        var cfg = {}; try { cfg = LightRefStorage.readConfig(); } catch (e2) {}
+                        window.LightRefOnboarding.open(cfg.language || 'pt');
+                    }
+                } else if (what === 'shortcuts') {
+                    openShortcuts();
+                }
+            });
+        }
+    }
+    function openShortcuts() {
+        var modal = document.getElementById('shortcuts-modal');
+        var body = document.getElementById('shortcuts-body');
+        if (!modal || !body) return;
+        body.innerHTML = renderShortcutGroups(buildShortcutGroups());
+        modal.style.display = 'flex';
+        refreshIcons();
+        var cls = document.getElementById('shortcuts-close');
+        if (cls && cls.focus) cls.focus();
+    }
+    function closeShortcuts() {
+        var modal = document.getElementById('shortcuts-modal');
+        if (modal) modal.style.display = 'none';
+    }
+    function setupShortcutsModal() {
+        var modal = document.getElementById('shortcuts-modal');
+        if (!modal) return;
+        var cls = document.getElementById('shortcuts-close');
+        if (cls) cls.addEventListener('click', closeShortcuts);
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeShortcuts(); });
+        document.addEventListener('keydown', function (e) {
+            if ((e.key === 'Escape' || e.code === 'Escape') && modal.style.display !== 'none') closeShortcuts();
+        });
+    }
 
     // Elemento onde as classes de estado (reference/collapsed) sao aplicadas.
     // O CSS usa "#lr04 .lr04-reference ..." entao a classe fica na .lr04-window.
@@ -1648,6 +1720,45 @@
         renderDrawers(model);
     }
 
+    // ---------- Atalhos de teclado (so exibicao; dados em sincronia com os binds) ----------
+    function buildShortcutGroups() {
+        return [
+            { title: 'Luzes', rows: [
+                { combo: 'Ctrl+Shift+A', desc: 'Adicionar luz' },
+                { combo: 'Ctrl+Shift+X', desc: 'Remover a luz selecionada' },
+                { combo: 'Ctrl+Shift+Z', desc: 'Desfazer a remocao' },
+                { combo: 'Ctrl+Shift+1 a 9', desc: 'Selecionar a luz pelo numero' }
+            ] },
+            { title: 'Arraste no visor (segure Shift)', rows: [
+                { combo: 'Shift + arrastar', desc: 'Girar a luz ativa (direcao e altura)' },
+                { combo: 'Ctrl+Shift + arrastar', desc: 'Mudar so a intensidade' },
+                { combo: 'Ctrl+Shift+Alt + arrastar', desc: 'Mudar a cor (horizontal) e a temperatura (vertical)' }
+            ] },
+            { title: 'Transformar objeto (aba Posicao)', rows: [
+                { combo: 'G', desc: 'Mover' },
+                { combo: 'S', desc: 'Escalar' },
+                { combo: 'R', desc: 'Rotacionar' },
+                { combo: 'X / Y / Z', desc: 'Travar no eixo' },
+                { combo: 'Enter', desc: 'Confirmar' },
+                { combo: 'Esc', desc: 'Cancelar' }
+            ] }
+        ];
+    }
+    function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function renderShortcutGroups(groups) {
+        var html = '';
+        for (var g = 0; g < groups.length; g++) {
+            html += '<div class="lr04-sc-group"><h3 class="lr04-sc-title">' + escHtml(groups[g].title) + '</h3><dl class="lr04-sc-list">';
+            var rows = groups[g].rows;
+            for (var r = 0; r < rows.length; r++) {
+                html += '<div class="lr04-sc-row"><dt class="lr04-sc-combo">' + escHtml(rows[r].combo) + '</dt><dd class="lr04-sc-desc">' + escHtml(rows[r].desc) + '</dd></div>';
+            }
+            html += '</dl></div>';
+        }
+        return html;
+    }
+
+
     // Exposto para testes em Node (Property 1/2 e smoke da renderizacao). So
     // quando ha 'window'. As funcoes puras nao dependem de DOM.
     try {
@@ -2030,6 +2141,7 @@
     // Exposto para testes em Node (round-trip do Estado_Completo). So quando ha
     // 'window' (no CEF sempre ha; em Node os testes criam um window fake).
     try { if (typeof window !== 'undefined' && window) window.__lrStateApi = { collectSceneState: collectSceneState, applySceneState: applySceneState, collectSessionState: collectSessionState, applySessionState: applySessionState, sanitizeSessionState: sanitizeSessionState }; } catch (e) {}
+    try { if (typeof window !== 'undefined' && window) window.__lrShortcuts = { buildShortcutGroups: buildShortcutGroups, renderShortcutGroups: renderShortcutGroups }; } catch (e) {}
 
 })();
 

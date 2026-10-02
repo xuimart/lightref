@@ -1,0 +1,114 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "2. Checkpoint Etapa 1 - Ensure all tests pass": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914210253
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914519506
+      }
+    ],
+    "3. Remover a ligacao do #btn-help em onboarding.js": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914210363
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914218524
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914269297
+      }
+    ],
+    "4. Adicionar a marcacao do popover e do modal em index.html": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914210496
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914524904
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914621634
+      }
+    ],
+    "5. Adicionar o CSS do popover e da lista em index.css": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914210668
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914525766
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914620689
+      }
+    ],
+    "6. Fiar o menu e o modal no boot do panel.js": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914210876
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914622716
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914770470
+      }
+    ],
+    "7. Registrar os novos testes no package.json e checkpoint final": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914210995
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914771310
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914795975
+      }
+    ],
+    "1. Adicionar Dados_dos_Atalhos, render e exposicao em panel.js": [
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914218154
+      },
+      {
+        "executionId": "54437ad0-0640-437e-9cef-6d36a9bfe3f7",
+        "chatSessionId": "sess_be5ace9f-b6e3-468c-ac3e-1e051385c44a",
+        "timestamp": 1790914518627
+      }
+    ]
+  }
+}
