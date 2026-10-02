@@ -1,11 +1,11 @@
 {
   "name": "com.lightref.cep",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "LightRef - referencia de iluminacao 3D para Photoshop (Xuimart)",
   "type": "commonjs",
   "private": true,
   "scripts": {
-    "test": "node tests/drawerState.property.test.js && node tests/renameCategory.property.test.js && node tests/deleteModel.example.test.js && node tests/saveScene.property.test.js && node tests/stateRoundtrip.property.test.js && node tests/stateMissingFields.property.test.js && node tests/categoryResolution.property.test.js && node tests/deletableFlag.property.test.js && node tests/renderDrawers.smoke.test.js && node tests/categoryNameEmpty.property.test.js && node tests/categoryNameDuplicate.property.test.js && node tests/createCategory.example.test.js && node tests/moveValid.property.test.js && node tests/moveInvalid.property.test.js && node tests/dndFeedback.smoke.test.js && node tests/deleteScene.property.test.js && node tests/colorPicker.example.test.js && node tests/keepPanelLoaded.example.test.js"
+    "test": "node tests/drawerState.property.test.js && node tests/renameCategory.property.test.js && node tests/deleteModel.example.test.js && node tests/saveScene.property.test.js && node tests/stateRoundtrip.property.test.js && node tests/stateMissingFields.property.test.js && node tests/categoryResolution.property.test.js && node tests/deletableFlag.property.test.js && node tests/renderDrawers.smoke.test.js && node tests/categoryNameEmpty.property.test.js && node tests/categoryNameDuplicate.property.test.js && node tests/createCategory.example.test.js && node tests/moveValid.property.test.js && node tests/moveInvalid.property.test.js && node tests/dndFeedback.smoke.test.js && node tests/deleteScene.property.test.js && node tests/colorPicker.example.test.js && node tests/keepPanelLoaded.example.test.js && node tests/sessionSanitize.property.test.js && node tests/sessionToken.property.test.js && node tests/sessionHostIsolation.property.test.js && node tests/sessionDebounce.property.test.js && node tests/sessionRoundtrip.property.test.js && node tests/sessionIdempotent.property.test.js && node tests/sessionBoot.example.test.js && node tests/updateDecision.property.test.js && node tests/updateButton.smoke.test.js && node tests/onboardingContent.property.test.js && node tests/onboarding.example.test.js"
   },
   "devDependencies": {
     "fast-check": "^4.10.2"

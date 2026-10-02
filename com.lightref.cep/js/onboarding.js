@@ -31,7 +31,7 @@
                 'Escolha um modelo ou suba o seu. Arraste no visor pra girar e ver a forma.',
                 'Adicione quantas luzes quiser. Cada uma tem direcao, altura, cor e intensidade.',
                 'Em Ajustes voce estuda valores: posterize, cutout, preto e branco e mais.',
-                'Curtiu? Se quiser apoiar o projeto, todo cafezinho ajuda. Bons estudos!'
+                'Pronto! Qualquer duvida, reabra este guia pelo botao de ajuda no visor. Bons estudos!'
             ],
             ob1: 'O LightRef monta uma cena 3D dentro do Photoshop pra voce ver como a luz esculpe a forma. Quando gostar, joga o resultado como uma camada no seu documento.',
             ob2: 'Aba Cena: escolha o modelo (ou importe o seu), gire com os sliders ou arrastando no visor, e troque o fundo (cor ou transparente).',
@@ -48,7 +48,7 @@
                 'Pick a model or upload yours. Drag in the viewport to spin and read the form.',
                 'Add as many lights as you want. Each has direction, height, color and intensity.',
                 'In Adjust you study values: posterize, cutout, black & white and more.',
-                'Enjoyed it? If you want to support the project, every coffee helps. Happy studies!'
+                'All set! Reopen this guide anytime via the help button in the viewport. Happy studies!'
             ],
             ob1: 'LightRef builds a 3D scene inside Photoshop so you can see how light sculpts the form. When you like it, send the result as a layer into your document.',
             ob2: 'Scene tab: pick the model (or import yours), rotate with sliders or by dragging in the viewport, and change the background (color or transparent).',

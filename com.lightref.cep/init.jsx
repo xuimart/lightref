@@ -3,6 +3,17 @@
 // Funcao principal: pegar um PNG salvo em disco pelo painel e coloca-lo como
 // uma nova layer no documento ativo.
 
+#targetengine "lightref"
+
+// Token de sessao do Photoshop: nasce uma vez por sessao e sobrevive a
+// recarregamentos do painel; morre quando o Photoshop encerra (engine persistente).
+function lightrefSessionToken() {
+    if ($.global.__lightrefSession == undefined || $.global.__lightrefSession == null) {
+        $.global.__lightrefSession = String((new Date()).getTime()) + "-" + String(Math.floor(Math.random() * 1000000000));
+    }
+    return $.global.__lightrefSession;
+}
+
 // Coloca o PNG em pngPath como uma nova camada no documento ativo.
 // Retorna "OK" em sucesso ou "ERRO: <motivo>" (string, para o evalScript ler).
 function lightrefPlaceRender(pngPath) {

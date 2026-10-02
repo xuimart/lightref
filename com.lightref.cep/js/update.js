@@ -8,7 +8,7 @@
     'use strict';
 
     // Versao compilada deste build. Bump a cada release (ver SISTEMA_DE_UPDATE).
-    var LIGHTREF_VERSION = '0.6.0';
+    var LIGHTREF_VERSION = '0.7.0';
 
     // Fonte da verdade para "existe versao nova?".
     var VERSION_URL = 'https://www.xuimart.com.br/lightref/version.json';
@@ -30,9 +30,11 @@
     // GET simples. Usa o https do Node (CEP com --enable-nodejs); cai no fetch
     // do navegador se precisar. cb(err, dataObj).
     function fetchJson(url, cb) {
+        // Cache-buster: proxies/CDN podem servir version.json em cache (A.6).
+        var busted = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + (new Date()).getTime();
         try {
             var https = require('https');
-            var req = https.get(url, function (res) {
+            var req = https.get(busted, function (res) {
                 var body = '';
                 res.on('data', function (c) { body += c; });
                 res.on('end', function () {
@@ -45,7 +47,7 @@
         } catch (eNode) {
             // Fallback: fetch (pode esbarrar em CSP, por isso https e o preferido).
             try {
-                global.fetch(url).then(function (r) { return r.json(); })
+                global.fetch(busted).then(function (r) { return r.json(); })
                     .then(function (j) { cb(null, j); })
                     .catch(function (e) { cb(e); });
             } catch (eFetch) { cb(eFetch); }
@@ -96,10 +98,20 @@
         } catch (e) {}
     }
 
+    // Decide o desfecho da verificacao de versao (PURA, testavel sem rede).
+    // retorna 'banner'  -> existe versao mais nova (mostrar banner/baixar)
+    //         'current' -> ja esta atualizado (so avisa se manual)
+    //         'silent'  -> nada a fazer
+    function decideUpdateOutcome(remote, installed, manual) {
+        if (remote && compareVersions(remote, installed) > 0) return 'banner';
+        return manual ? 'current' : 'silent';
+    }
+
     // API publica.
     var LightRefUpdate = {
         VERSION: LIGHTREF_VERSION,
         compareVersions: compareVersions,
+        decideUpdateOutcome: decideUpdateOutcome,
         // check(manual): se manual=true, avisa mesmo quando ja esta atualizado.
         check: function (manual) {
             fetchJson(VERSION_URL, function (err, info) {
@@ -107,9 +119,10 @@
                     if (manual && global.LightRefToast) global.LightRefToast('Nao foi possivel verificar atualizacoes.');
                     return;
                 }
-                if (compareVersions(info.version, LIGHTREF_VERSION) > 0) {
+                var outcome = decideUpdateOutcome(info.version, LIGHTREF_VERSION, manual);
+                if (outcome === 'banner') {
                     showBanner(info);
-                } else if (manual && global.LightRefToast) {
+                } else if (outcome === 'current' && global.LightRefToast) {
                     global.LightRefToast('Voce ja esta na versao mais recente (' + LIGHTREF_VERSION + ').');
                 }
             });
