@@ -60,9 +60,9 @@
                 if (code === 'KeyS') { scene.beginXform('scale'); e.preventDefault(); return; }
                 return;
             }
-            if (code === 'KeyG') { if (!scene.beginXform('move')) feedback('Selecione um objeto', true); e.preventDefault(); }
-            else if (code === 'KeyS') { if (!scene.beginXform('scale')) feedback('Selecione um objeto', true); e.preventDefault(); }
-            else if (code === 'KeyR') { if (!scene.beginXform('rotate')) feedback('Selecione um objeto', true); e.preventDefault(); }
+            if (code === 'KeyG') { if (!scene.beginXform('move')) feedback(_t('fbSelectObj'), true); e.preventDefault(); }
+            else if (code === 'KeyS') { if (!scene.beginXform('scale')) feedback(_t('fbSelectObj'), true); e.preventDefault(); }
+            else if (code === 'KeyR') { if (!scene.beginXform('rotate')) feedback(_t('fbSelectObj'), true); e.preventDefault(); }
         });
     }
     var currentTab = 'light', currentPage = 'studio';
@@ -140,10 +140,15 @@
         { v:'pearl', t:'Perola' }, { v:'white', t:'Branco' }
     ];
 
-    var LIGHT_NAMES = ['Principal', 'Preenchimento', 'Contorno', 'Recorte', 'Rebote'];
+    function getLightNames() {
+        var _i = window.LightRefI18n;
+        if (!_i) return ['Principal', 'Preenchimento', 'Contorno', 'Recorte', 'Rebote'];
+        return [_i.t('lightMain'), _i.t('lightFill'), _i.t('lightRim'), _i.t('lightCut'), _i.t('lightBounce')];
+    }
     function nextLightName() {
         var n = scene.lightManager.lights.length;
-        return LIGHT_NAMES[n] || ('Luz ' + (n + 1));
+        var _ln = getLightNames();
+        return _ln[n] || ('Luz ' + (n + 1));
     }
 
     // Pilha simples de luzes deletadas para o desfazer (Ctrl+Shift+Z).
@@ -152,33 +157,37 @@
         var nl = scene.lightManager.add({ name: nextLightName() });
         selectLight(nl.id);
         if (currentTab === 'light') renderTab();
-        feedback('Luz adicionada: ' + nl.name);
+        feedback(_t('fbLightAdded', { nome: nl.name }));
         captureSession();
         return nl;
     }
     function removeSelectedLight() {
         var l = scene.lightManager.get ? scene.lightManager.get(selectedLightId) : null;
-        if (!l) { feedback('Nenhuma luz selecionada', true); return; }
+        if (!l) { feedback(_t('fbNoLight'), true); return; }
         deletedLights.push({ name:l.name, color:l.color, intensity:l.intensity, azimuth:l.azimuth, elevation:l.elevation, enabled:l.enabled });
         var wasId = l.id;
         scene.lightManager.remove(wasId);
         if (selectedLightId === wasId) selectLight(scene.lightManager.lights.length ? scene.lightManager.lights[0].id : null);
         if (currentTab === 'light') renderTab();
-        feedback('Luz removida (Ctrl+Shift+Z desfaz)');
+        feedback(_t('fbLightRemoved'));
         captureSession();
     }
     function undoLight() {
-        if (!deletedLights.length) { feedback('Nada para desfazer', true); return; }
+        if (!deletedLights.length) { feedback(_t('fbNoUndo'), true); return; }
         var d = deletedLights.pop();
         var nl = scene.lightManager.add(d);
         selectLight(nl.id);
         if (currentTab === 'light') renderTab();
-        feedback('Luz restaurada: ' + (d.name||''));
+        feedback(_t('fbLightRestored', { nome: d.name||'' }));
         captureSession();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         try { var cfg = LightRefStorage.readConfig(); if (cfg.exportMode) exportMode = cfg.exportMode; } catch (e) {}
+        /* i18n boot: set active lang before any render. */
+        var cfgI18n = {}; try { cfgI18n = LightRefStorage.readConfig(); } catch (eI18n) {}
+        var bootLang = (cfgI18n && cfgI18n.language) || 'pt';
+        if (window.LightRefI18n && window.LightRefI18n.setLang) window.LightRefI18n.setLang(bootLang);
         fillModelSelect();
         fillAddTypeSelect();
         fillMaterialSelect();
@@ -195,11 +204,11 @@
         bindCompKeys();
         if (scene.onTransformChanged) scene.onTransformChanged(function () { if (currentTab === 'pos') renderTab(); if (currentTab !== 'comp') saveModelXform(); });
         if (scene.onXform) scene.onXform(function (phase, info) {
-            if (phase === 'start') { var t = info==='move'?'Mover':(info==='scale'?'Escala':'Rotacao'); feedback(t + ': mova o mouse, clique confirma, Esc cancela'); }
-            else if (phase === 'axis') { feedback('Eixo: ' + (info ? info.toUpperCase() : 'livre')); }
-            else if (phase === 'confirm') { feedback('Transformacao aplicada'); if (currentTab === 'comp') renderTab(); else if (currentTab === 'pos') { saveModelXform(); renderTab(); } }
-            else if (phase === 'cancel') { feedback('Cancelado'); }
-            else if (phase === 'none') { feedback('Selecione um objeto na lista', true); }
+            if (phase === 'start') { var xfType = _t(info==='move'?'scMove':(info==='scale'?'scScale':'scRotate')); feedback(_t('fbXformStart', { tipo: xfType })); }
+            else if (phase === 'axis') { feedback(_t('fbAxis', { eixo: info ? info.toUpperCase() : 'livre' })); }
+            else if (phase === 'confirm') { feedback(_t('fbTransformApplied')); if (currentTab === 'comp') renderTab(); else if (currentTab === 'pos') { saveModelXform(); renderTab(); } }
+            else if (phase === 'cancel') { feedback(_t('fbCancelled')); }
+            else if (phase === 'none') { feedback(_t('fbSelectInList'), true); }
         });
         if (scene.onLightShortcut) scene.onLightShortcut(function (phase, light) {
             if (phase === 'drag' && currentTab === 'light' && light) {
@@ -236,6 +245,8 @@
         // onboarding ainda nao foi concluido; reabrir pela ajuda nao mexe na sessao.
         var cfgBoot = {}; try { cfgBoot = LightRefStorage.readConfig(); } catch (eCfg) {}
         var curLang = cfgBoot.language || 'pt';
+        /* Apply static strings once curLang is known (before wizard shows). */
+        applyStaticStrings();
         if (window.LightRefOnboarding) {
             try { window.LightRefOnboarding.onLanguageChosen(function (lang) { applyLanguage(lang); }); } catch (eOb1) {}
             try { window.LightRefOnboarding.maybeShow(curLang); } catch (eOb2) {}
@@ -326,12 +337,122 @@
     // O CSS usa "#lr04 .lr04-reference ..." entao a classe fica na .lr04-window.
     function stateHost() { return $('#lr04 .lr04-window'); }
 
-    // Aplica o idioma escolhido no wizard. A i18n completa do painel esta
-    // fora de escopo; aqui registramos a escolha (merge no config) sem
-    // quebrar nada. O onboarding.js tambem persiste ao concluir/fechar.
+    // Traduz os elementos estaticos do index.html para o idioma ativo.
+    function applyStaticStrings() {
+        function el(sel) { try { return document.querySelector(sel); } catch(e) { return null; } }
+        function els(sel) { try { return Array.prototype.slice.call(document.querySelectorAll(sel)); } catch(e) { return []; } }
+        function setTxt(sel, key) { var e = el(sel); if (e) e.textContent = _t(key); }
+        function setAria(sel, key) { var e = el(sel); if (e) { e.setAttribute('aria-label', _t(key)); e.setAttribute('data-tooltip', _t(key)); } }
+        /* Tabs */
+        setTxt('[data-tab="light"]', 'tabLight');
+        setTxt('[data-tab="lens"]', 'tabLens');
+        setTxt('[data-tab="adjust"]', 'tabAdjust');
+        setTxt('[data-tab="position"]', 'tabPosition');
+        setTxt('[data-tab="composition"]', 'tabComposition');
+        /* Projection */
+        setTxt('[data-projection="ortho"]', 'projOrtho');
+        /* Views */
+        setTxt('[data-view="front"]', 'viewFront');
+        setTxt('[data-view="profile"]', 'viewSide');
+        setTxt('[data-view="top"]', 'viewTop');
+        /* Gizmos (position and composition panes) */
+        els('[data-gizmo="rotate"]').forEach(function(e){ e.textContent = _t('gizmoRotate'); });
+        els('[data-gizmo="move"]').forEach(function(e){ e.textContent = _t('gizmoMove'); });
+        els('[data-gizmo="off"]').forEach(function(e){ e.textContent = _t('gizmoOff'); });
+        /* Pages */
+        setTxt('[data-page="library"]', 'pageLibrary');
+        setTxt('[data-page="scenes"]', 'pageScenes');
+        /* Light color label */
+        var lclEl = el('.lr04-lightcolor span'); if (lclEl) lclEl.textContent = _t('labelColor');
+        /* Shortcuts title */
+        setTxt('#shortcuts-title', 'shortcutsTitle');
+        /* Footer update button label */
+        setTxt('.lr04-updlabel', 'btnUpdate');
+        /* Loading text */
+        var lt = el('.loading-text'); if (lt) { var ltSpan = lt.querySelector('span'); if (ltSpan) ltSpan.textContent = _t('textLoading'); }
+        /* Help menu items */
+        setTxt('[data-help="intro"]', 'menuIntro');
+        setTxt('[data-help="shortcuts"]', 'menuShortcuts');
+        /* Action buttons aria-label + data-tooltip */
+        setAria('[data-action="export"]', 'actionExport');
+        setAria('[data-action="save"]', 'actionSave');
+        setAria('[data-action="import"]', 'actionImport');
+        setAria('[data-action="reset"]', 'actionReset');
+        setAria('[data-action="reset-view"]', 'actionResetView');
+        els('[data-action="collapse"]').forEach(function(e){ e.setAttribute('aria-label', _t('actionCollapse')); });
+        setAria('[data-toggle="floor"]', 'toggleFloor');
+        setAria('[data-toggle="guides"]', 'toggleGuides');
+        setAria('[data-toggle="reference"]', 'toggleReference');
+        setAria('[data-toggle="materialOpen"]', 'toggleMaterial');
+        (function(){ var b = el('#btn-update'); if (b) { b.setAttribute('aria-label', _t('btnUpdateAria')); b.setAttribute('data-tooltip', _t('btnUpdateAria')); } })();
+        (function(){ var b = el('#btn-help'); if (b) { b.setAttribute('aria-label', _t('btnHelp')); b.setAttribute('data-tooltip', _t('btnHelp')); } })();
+        /* Checkboxes in adjust (text node of parent label) */
+        (function(){
+            function setCheckLabel(setting, key) {
+                var inp = el('.lr04-inspector input[data-setting="' + setting + '"]');
+                if (!inp || !inp.parentNode) return;
+                var nodes = inp.parentNode.childNodes;
+                for (var i = 0; i < nodes.length; i++) {
+                    if (nodes[i].nodeType === 3 && nodes[i].textContent.replace(/\s/g,'')) {
+                        nodes[i].textContent = _t(key); return;
+                    }
+                }
+            }
+            setCheckLabel('poster', 'checkPosterize');
+            setCheckLabel('cutout', 'checkCutout');
+            setCheckLabel('gray', 'checkGray');
+        })();
+        /* Position / Composition static headings */
+        (function(){
+            var posHeadings = document.querySelectorAll ? Array.prototype.slice.call(document.querySelectorAll('#lr04-pane-position .lr04-heading')) : [];
+            if (posHeadings[0]) posHeadings[0].textContent = _t('compGizmoSection');
+            if (posHeadings[1]) posHeadings[1].textContent = _t('compSliderSection');
+            var compHeadings = document.querySelectorAll ? Array.prototype.slice.call(document.querySelectorAll('#lr04-pane-composition .lr04-heading')) : [];
+            if (compHeadings[0]) compHeadings[0].textContent = _t('compGizmoObj');
+            if (compHeadings[1]) compHeadings[1].textContent = _t('compAddSection');
+            /* compCount heading updated by renderComposition */
+            var compObjLabel = document.querySelector('#lr04-pane-composition .lr04-addrow'); if (compObjLabel) { var firstText = compObjLabel.firstChild; if (firstText && firstText.nodeType === 3) firstText.textContent = _t('compObjLabel'); }
+            /* Add to scene button */
+            var addToScene = document.querySelector('[data-action="add-object"]'); if (addToScene) addToScene.textContent = _t('compAddBtn');
+        })();
+        /* Material section labels */
+        (function(){
+            var ml = el('label[for="lr04-material-select"]'); if (ml) ml.textContent = _t('labelMaterial');
+            /* Scatter labels: .lr04-scatter labels have text node + input/span */
+            var scatters = els('.lr04-scatter');
+            if (scatters[0]) {
+                var nodes0 = scatters[0].childNodes;
+                if (nodes0[0] && nodes0[0].nodeType === 3) nodes0[0].textContent = _t('labelScatterColor');
+            }
+            if (scatters[1]) {
+                var nodes1 = scatters[1].childNodes;
+                if (nodes1[0] && nodes1[0].nodeType === 3) nodes1[0].textContent = _t('labelBackground');
+                /* Transparent checkbox label text node */
+                var bgCheck = el('#bg-transp'); if (bgCheck && bgCheck.parentNode) {
+                    var tnodes = bgCheck.parentNode.childNodes;
+                    for (var ti = 0; ti < tnodes.length; ti++) {
+                        if (tnodes[ti].nodeType === 3 && tnodes[ti].textContent.replace(/\s/g,'')) {
+                            tnodes[ti].textContent = ' ' + _t('labelTransparent'); break;
+                        }
+                    }
+                }
+            }
+        })();
+    }
+
+    // Aplica o idioma escolhido no wizard e re-renderiza o painel.
+    // O onboarding.js tambem persiste ao concluir/fechar.
     function applyLanguage(lang) {
         if (lang !== 'pt' && lang !== 'en') return;
         try { LightRefStorage.writeConfig({ language: lang }); } catch (e) {}
+        if (window.LightRefI18n && window.LightRefI18n.setLang) window.LightRefI18n.setLang(lang);
+        applyStaticStrings();
+        renderTab();
+        fillModelSelect();
+        fillAddTypeSelect();
+        if (currentPage === 'library' || currentPage === 'scenes') {
+            try { renderCatalog(currentPage); } catch (e) {}
+        }
     }
 
     // ---------- Estado_da_Sessao: captura (Area C, tarefa 6) ----------
@@ -397,13 +518,14 @@
         var sel = $('#model-select'); if (!sel) return; sel.innerHTML = '';
         var cats = [];
         MODELS.forEach(function (m) { var c = m.cat || 'Outros'; if (cats.indexOf(c) < 0) cats.push(c); });
+        var _catKey = { 'Cabecas':'ogHeads', 'Bustos e Torsos':'ogBusts', 'Figuras':'ogFigures', 'Formas basicas':'ogShapes' };
         cats.forEach(function (c) {
-            var g = document.createElement('optgroup'); g.label = c;
+            var g = document.createElement('optgroup'); g.label = _t(_catKey[c] || c);
             MODELS.forEach(function (m) { if ((m.cat||'Outros') === c) { var o = document.createElement('option'); o.value = m.v; o.textContent = m.t; g.appendChild(o); } });
             sel.appendChild(g);
         });
         if (typeof SHAPES !== 'undefined' && SHAPES.length) {
-            var gs = document.createElement('optgroup'); gs.label = 'Formas basicas';
+            var gs = document.createElement('optgroup'); gs.label = _t('ogShapes');
             SHAPES.forEach(function (s) { var o = document.createElement('option'); o.value = s.v; o.textContent = s.t; gs.appendChild(o); });
             sel.appendChild(gs);
         }
@@ -411,10 +533,10 @@
     // Preenche o select .lr04-addtype (aba Composicao) com formas + modelos.
     function fillAddTypeSelect() {
         var sel = $('.lr04-addtype'); if (!sel) return; sel.innerHTML = '';
-        var gs = document.createElement('optgroup'); gs.label = 'Formas basicas';
+        var gs = document.createElement('optgroup'); gs.label = _t('ogShapes');
         SHAPES.forEach(function (s) { var o = document.createElement('option'); o.value = s.v; o.textContent = s.t; gs.appendChild(o); });
         sel.appendChild(gs);
-        var gm = document.createElement('optgroup'); gm.label = 'Modelos';
+        var gm = document.createElement('optgroup'); gm.label = _t('ogModels');
         MODELS.forEach(function (m) { var o = document.createElement('option'); o.value = m.v; o.textContent = m.t; gm.appendChild(o); });
         sel.appendChild(gm);
     }
@@ -512,7 +634,7 @@
             showLoading(false);
             if (err) {
                 var em = (err && err.message) ? String(err.message) : '';
-                feedback('Falha ao carregar' + (em ? ': ' + em.slice(0, 160) : ''), true);
+                feedback(_t('fbLoadFail') + (em ? ': ' + em.slice(0, 160) : ''), true);
                 try { (window.__lrLoadErrors = window.__lrLoadErrors || []).push({ url: url, msg: em }); if (window.__lrDiagWrite) window.__lrDiagWrite(); } catch (e0) {}
                 if (onFail) onFail(err); return;
             }
@@ -554,7 +676,7 @@
     // Rotulo da Versao_Instalada; le LightRefUpdate.VERSION. Fallback 'v?' sem erro (Req 3.3).
     function installedVersionLabel() { var v = (window.LightRefUpdate && window.LightRefUpdate.VERSION) ? window.LightRefUpdate.VERSION : null; return v ? ('v' + v) : 'v?'; }
     // Verificacao_Manual: estado visual 'is-checking', aviso e check(true). Desfechos vem via LightRefToast/banner.
-    function runManualUpdateCheck(btn) { if (btn) btn.classList.add('is-checking'); feedback('Verificando atualizacoes...', false); if (window.LightRefUpdate) window.LightRefUpdate.check(true); setTimeout(function(){ if (btn) btn.classList.remove('is-checking'); }, 1200); }
+    function runManualUpdateCheck(btn) { if (btn) btn.classList.add('is-checking'); feedback(_t('fbChecking'), false); if (window.LightRefUpdate) window.LightRefUpdate.check(true); setTimeout(function(){ if (btn) btn.classList.remove('is-checking'); }, 1200); }
     function setupUpdates() {
         // Versao instalada no rodape (nao sobrescreve a marca; preserva #lr-version).
         var ver = document.getElementById('lr-version');
@@ -610,10 +732,10 @@
                     }
                 }
                 loadModel(LightRefStorage.modelFileURL(rec));
-                feedback('Modelo importado');
+                feedback(_t('fbImported'));
                 // Re-renderiza a Biblioteca se ela estiver aberta, para mostrar o novo card.
                 if (currentPage === 'library') renderCatalog('library');
-            } catch (e) { pendingImportCat = null; feedback('Falha ao importar', true); }
+            } catch (e) { pendingImportCat = null; feedback(_t('fbImportFail'), true); }
         } else {
             var url = file.path ? ('file:///' + file.path.replace(/\\/g,'/')) : URL.createObjectURL(file);
             loadModel(url);
@@ -691,7 +813,7 @@
             scene.setMaterial(this.value);
             try { LightRefStorage.writeConfig({ material:this.value }); } catch (e) {}
             renderMaterialFields();
-            feedback('Material: ' + this.options[this.selectedIndex].text);
+            feedback(_t('fbMaterial', { nome: this.options[this.selectedIndex].text }));
             captureSession();
         });
         var fc = $('.lr04-material input[data-setting="formColor"]');
@@ -745,7 +867,7 @@
             busy = true;
             window.LightRefToPhotoshop.pickColor(el.value, function (err, color) {
                 busy = false;
-                if (err) { feedback('Nao foi possivel abrir o seletor de cores do Photoshop', true); return; }
+                if (err) { feedback(_t('fbColorPicker'), true); return; }
                 if (!color) return; // cancelado
                 el.value = color;
                 fireInput(el);
@@ -803,6 +925,63 @@
         });
     }
 
+    // Helper de traducao: retorna string do dicionario ativo ou o proprio key.
+    function _t(key, vars) {
+        if (window.LightRefI18n && window.LightRefI18n.t) return window.LightRefI18n.t(key, vars);
+        /* Fallback hardcoded PT for the most common keys (for safety). */
+        var fb = {
+            lightIntensity:'Intensidade', lightRotate:'Girar', lightHeight:'Altura',
+            lightAdd:'Adicionar luz', lightRemove:'Remover',
+            lensLabel:'Lente', lensFraming:'Enquadramento', lensEnvSection:'Ambiente / HDR',
+            lensEnvMap:'Mapa', lensEnvIntensity:'Intensidade', lensEnvBg:'Mostrar fundo do HDR',
+            lensResetCamera:'Resetar camera',
+            adjExposure:'Exposicao', adjContrast:'Contraste', adjTemperature:'Temperatura',
+            adjSaturation:'Saturacao', adjLevels:'Niveis', adjSteps:'Degraus',
+            adjReset:'Zerar ajustes',
+            posRotateY:'Girar Y', posTiltX:'Inclinar X', posHeight:'Altura',
+            posHorizontal:'Horizontal', posDepth:'Profundidade', posScale:'Escala',
+            posTiltZ:'Inclinar Z', posSave:'Salvar posicao do modelo',
+            posCenter:'Centralizar / resetar',
+            posHint:'Atalhos: G mover, S escala, R rotacao (RR livre). X/Y/Z travam eixo, clique confirma, Esc cancela.',
+            compGizmoSection:'Gizmo no visor', compSliderSection:'Ajuste por sliders',
+            compGizmoObj:'Gizmo (objeto selecionado)', compAddSection:'Adicionar forma / modelo',
+            compObjLabel:'Objeto', compCount:'Objetos na cena ({n})',
+            compDeform:'Distorcer forma', compWidthX:'Largura X',
+            compHeightY:'Altura Y', compDepthZ:'Profund. Z',
+            compResetShape:'Resetar forma', compAddBtn:'+ Adicionar a cena',
+            ogHeads:'Cabecas', ogBusts:'Bustos e Torsos', ogFigures:'Figuras',
+            ogShapes:'Formas basicas', ogModels:'Modelos',
+            scGrpLights:'Luzes',
+            scGrpDrag:'Arraste no visor (segure Shift)',
+            scGrpTransform:'Transformar objeto (aba Posicao)',
+            scAddLight:'Adicionar luz', scRemoveLight:'Remover a luz selecionada',
+            scUndoRemove:'Desfazer a remocao', scSelectByNum:'Selecionar a luz pelo numero',
+            scDragRotate:'Girar a luz ativa (direcao e altura)',
+            scDragIntensity:'Mudar so a intensidade',
+            scDragColor:'Mudar a cor (horizontal) e a temperatura (vertical)',
+            scMove:'Mover', scScale:'Escalar', scRotate:'Rotacionar',
+            scLockAxis:'Travar no eixo', scConfirm:'Confirmar', scCancel:'Cancelar',
+            fbLightAdded:'Luz adicionada: {nome}', fbLightRemoved:'Luz removida (Ctrl+Shift+Z desfaz)',
+            fbLightRestored:'Luz restaurada: {nome}', fbNoLight:'Nenhuma luz selecionada',
+            fbNoUndo:'Nada para desfazer', fbLoadFail:'Falha ao carregar',
+            fbImported:'Modelo importado', fbImportFail:'Falha ao importar',
+            fbChecking:'Verificando atualizacoes...', fbSaving:'Salvando...',
+            fbSaved:'Posicao e miniatura salvas', fbMaterial:'Material: {nome}',
+            fbSelectObj:'Selecione um objeto', fbAddingObj:'Adicionando objeto...',
+            fbObjAdded:'Objeto adicionado', fbAddFail:'Falha ao adicionar',
+            fbTransformApplied:'Transformacao aplicada', fbCancelled:'Cancelado',
+            fbAxis:'Eixo: {eixo}', fbXformStart:'{tipo}: mova o mouse, clique confirma, Esc cancela',
+            fbSelectInList:'Selecione um objeto na lista',
+            fbColorPicker:'Nao foi possivel abrir o seletor de cores do Photoshop',
+            fbDeleteFail:'Falha ao remover o arquivo do modelo',
+            fbCatCreateFail:'Falha ao criar categoria',
+            fbCatRenameFail:'Falha ao renomear categoria'
+        };
+        var s = (key in fb) ? fb[key] : key;
+        if (vars) { for (var _k in vars) { if (Object.prototype.hasOwnProperty.call(vars, _k)) { s = s.split('{'+_k+'}').join(String(vars[_k])); } } }
+        return s;
+    }
+
     // Renderiza o conteudo da aba atual nos subcontainers ja presentes no HTML.
     function renderTab() {
         if (currentTab === 'light') renderLight();
@@ -840,17 +1019,17 @@
         var chips = scene.lightManager.lights.map(function (l) {
             return '<div class="lr04-chip'+(l.id===selectedLightId?' active':'')+'" data-id="'+l.id+'">' +
                    '<button data-light="'+l.id+'"><span class="lr04-dot" style="background:'+l.color+'"></span>'+l.name+'</button>' +
-                   '<button data-remove="'+l.id+'" title="Remover"><i data-lucide="x" aria-hidden="true"></i></button></div>';
+                   '<button data-remove="'+l.id+'" title="' + _t('lightRemove') + '"><i data-lucide="x" aria-hidden="true"></i></button></div>';
         }).join('');
-        chipsHost.innerHTML = chips + '<button id="add-light" class="lr04-addlight" title="Adicionar luz"><i data-lucide="plus" aria-hidden="true"></i></button>';
+        chipsHost.innerHTML = chips + '<button id="add-light" class="lr04-addlight" title="' + _t('lightAdd') + '"><i data-lucide="plus" aria-hidden="true"></i></button>';
 
         var fieldsHost = $('.lr04-lightfields'); if (fieldsHost) {
             var l = selectedLightId != null ? scene.lightManager.get(selectedLightId) : null;
             if (l) {
                 fieldsHost.innerHTML =
-                    row('Intensidade','sl-intensity',0,10,0.1, l.intensity, '') +
-                    row('Girar','sl-azimuth',0,360,1, l.azimuth, '\u00b0') +
-                    row('Altura','sl-elevation',-90,90,1, l.elevation, '\u00b0');
+                    row(_t('lightIntensity'),'sl-intensity',0,10,0.1, l.intensity, '') +
+                    row(_t('lightRotate'),'sl-azimuth',0,360,1, l.azimuth, '\u00b0') +
+                    row(_t('lightHeight'),'sl-elevation',-90,90,1, l.elevation, '\u00b0');
                 wireRanges(fieldsHost);
             } else {
                 fieldsHost.innerHTML = '';
@@ -875,7 +1054,7 @@
     function renderLens() {
         var host = $('.lr04-lensfields'); if (!host) return;
         var f = scene.getFocalLength();
-        host.innerHTML = row('Lente','sl-focal',10,300,1, f, 'mm');
+        host.innerHTML = row(_t('lensLabel'),'sl-focal',10,300,1, f, 'mm');
         wireRanges(host);
         // Enquadramento (botoes data-view). setCameraPreset existe; presets 3/4,
         // perfil e topo ainda nao existem no motor, entao caem no 'front'.
@@ -888,6 +1067,10 @@
         });
         // Botao "Resetar camera" tambem reseta a visao.
         // (data-action="reset-view" ja tratado em bindViewTools.)
+        /* Update static lens heading for framing. */
+        (function(){ var fh = document.querySelector('#lr04-pane-lens .lr04-heading'); if (fh) fh.textContent = _t('lensFraming'); })();
+        /* Update Resetar camera button. */
+        (function(){ var rc = document.querySelector('#lr04-pane-lens [data-action="reset-view"]'); if (rc) rc.textContent = _t('lensResetCamera'); })();
         // Secao Ambiente / HDR recolhivel, inserida na coluna direita da lente.
         renderEnvSection();
     }
@@ -901,11 +1084,11 @@
         }).join('');
         var ei = scene.getEnvIntensity ? scene.getEnvIntensity() : 0.8;
         wrap.innerHTML =
-            '<button type="button" class="lr04-widebutton" id="env-drawer-head" aria-expanded="false">Ambiente / HDR</button>' +
+            '<button type="button" class="lr04-widebutton" id="env-drawer-head" aria-expanded="false">' + _t('lensEnvSection') + '</button>' +
             '<div id="env-drawer-body" hidden style="margin-top:8px">' +
-            '<div class="lr04-row"><span>Mapa</span><select id="env-select" style="grid-column:2 / span 2">'+envOpts+'</select></div>' +
-            row('Intensidade','sl-envint',0,2,0.05, (ei).toFixed(2), '') +
-            '<label class="lr04-check"><input type="checkbox" id="ck-envbg" checked>Mostrar fundo do HDR</label>' +
+            '<div class="lr04-row"><span>' + _t('lensEnvMap') + '</span><select id="env-select" style="grid-column:2 / span 2">'+envOpts+'</select></div>' +
+            row(_t('lensEnvIntensity'),'sl-envint',0,2,0.05, (ei).toFixed(2), '') +
+            '<label class="lr04-check"><input type="checkbox" id="ck-envbg" checked>' + _t('lensEnvBg') + '</label>' +
             '</div>';
         var head = $('#env-drawer-head'), body = $('#env-drawer-body');
         if (head && body) head.onclick = function () {
@@ -930,19 +1113,20 @@
         var p = scene.postfx.getParams();
         if (tonal) {
             tonal.innerHTML =
-                row('Exposicao','sl-exposure',-3,3,0.05, fx2(p.exposure), '') +
-                row('Contraste','sl-contrast',-1,1,0.02, fx2(p.contrast), '') +
-                row('Temperatura','sl-temperature',-1,1,0.02, fx2(p.temperature), '') +
-                row('Saturacao','sl-saturation',0,2,0.02, fx2(p.saturation), '');
+                row(_t('adjExposure'),'sl-exposure',-3,3,0.05, fx2(p.exposure), '') +
+                row(_t('adjContrast'),'sl-contrast',-1,1,0.02, fx2(p.contrast), '') +
+                row(_t('adjTemperature'),'sl-temperature',-1,1,0.02, fx2(p.temperature), '') +
+                row(_t('adjSaturation'),'sl-saturation',0,2,0.02, fx2(p.saturation), '');
             wireRanges(tonal);
         }
         // Niveis (posterizar) e Degraus (cutout) nos campos dedicados.
-        var lv = $('.lr04-levelsfield'); if (lv) { lv.innerHTML = row('Niveis','sl-posterize',2,16,1, p.posterizeLevels, ''); wireRanges(lv); }
-        var st = $('.lr04-stepsfield'); if (st) { st.innerHTML = row('Degraus','sl-cutout',2,8,1, p.cutoutLevels, ''); wireRanges(st); }
+        var lv = $('.lr04-levelsfield'); if (lv) { lv.innerHTML = row(_t('adjLevels'),'sl-posterize',2,16,1, p.posterizeLevels, ''); wireRanges(lv); }
+        var st = $('.lr04-stepsfield'); if (st) { st.innerHTML = row(_t('adjSteps'),'sl-cutout',2,8,1, p.cutoutLevels, ''); wireRanges(st); }
         // Checkboxes fixos do HTML.
         var cp = $('.lr04-inspector input[data-setting="poster"]'); if (cp) { cp.checked = !!p.posterizeOn; cp.onchange = function(){ scene.postfx.setParam('posterizeOn', this.checked?1:0); syncFilterButtons(); }; }
         var cc = $('.lr04-inspector input[data-setting="cutout"]'); if (cc) { cc.checked = !!p.cutoutOn; cc.onchange = function(){ scene.postfx.setParam('cutoutOn', this.checked?1:0); syncFilterButtons(); }; }
         var cg = $('.lr04-inspector input[data-setting="gray"]'); if (cg) { cg.checked = !!p.blackWhite; cg.onchange = function(){ scene.postfx.setParam('blackWhite', this.checked?1:0); syncFilterButtons(); }; }
+        (function(){ var ra = document.querySelector('[data-action="reset-adjust"]'); if (ra) ra.textContent = _t('adjReset'); })();
         bindAction('reset-adjust', function () { scene.postfx.reset(); renderTab(); syncFilterButtons(); });
     }
     // Reflete o estado dos filtros nos botoes do visor + quicksliders.
@@ -965,20 +1149,20 @@
         var gm = scene.getGizmoMode ? scene.getGizmoMode() : 'off';
         if (left) {
             left.innerHTML =
-                row('Girar Y','sl-yaw',-180,180,1, rot.yaw||0, '\u00b0') +
-                row('Inclinar X','sl-pitch',-180,180,1, rot.pitch||0, '\u00b0') +
-                row('Altura','sl-offy',-3,3,0.02, fx2(off.y), '') +
-                row('Horizontal','sl-offx',-3,3,0.02, fx2(off.x), '');
+                row(_t('posRotateY'),'sl-yaw',-180,180,1, rot.yaw||0, '\u00b0') +
+                row(_t('posTiltX'),'sl-pitch',-180,180,1, rot.pitch||0, '\u00b0') +
+                row(_t('posHeight'),'sl-offy',-3,3,0.02, fx2(off.y), '') +
+                row(_t('posHorizontal'),'sl-offx',-3,3,0.02, fx2(off.x), '');
             wireRanges(left);
         }
         if (right) {
             right.innerHTML =
-                row('Profundidade','sl-offz',-3,3,0.02, fx2(off.z), '') +
-                row('Escala','sl-mscale',0.2,3,0.02, fx2(sc), 'x') +
-                row('Inclinar Z','sl-roll',-180,180,1, roll, '\u00b0') +
-                '<button id="save-position" class="lr04-widebutton">Salvar posicao do modelo</button>' +
-                '<button id="reset-transform" class="lr04-widebutton">Centralizar / resetar</button>' +
-                '<div class="lr04-hint" style="font-size:10px;color:#8f9198;margin-top:8px;line-height:1.5">Atalhos: G mover, S escala, R rotacao (RR livre). X/Y/Z travam eixo, clique confirma, Esc cancela.</div>';
+                row(_t('posDepth'),'sl-offz',-3,3,0.02, fx2(off.z), '') +
+                row(_t('posScale'),'sl-mscale',0.2,3,0.02, fx2(sc), 'x') +
+                row(_t('posTiltZ'),'sl-roll',-180,180,1, roll, '\u00b0') +
+                '<button id="save-position" class="lr04-widebutton">' + _t('posSave') + '</button>' +
+                '<button id="reset-transform" class="lr04-widebutton">' + _t('posCenter') + '</button>' +
+                '<div class="lr04-hint" style="font-size:10px;color:#8f9198;margin-top:8px;line-height:1.5">' + _t('posHint') + '</div>';
             wireRanges(right);
             var rt = $('#reset-transform');
             if (rt) rt.onclick = function () {
@@ -990,7 +1174,7 @@
             var sp = $('#save-position');
             if (sp) sp.onclick = function () {
                 saveModelXform();
-                feedback('Salvando...');
+                feedback(_t('fbSaving'));
                 // Miniatura PADRONIZADA (igual as geradas): assincrona.
                 var savedUrl = currentModelUrl;
                 function useThumb(thumb) {
@@ -1001,7 +1185,7 @@
                             LightRefStorage.writeConfig({ modelThumbs: cfg.modelThumbs });
                         }
                     } catch (e) {}
-                    feedback('Posicao e miniatura salvas');
+                    feedback(_t('fbSaved'));
                 }
                 if (scene.standardThumbnail) scene.standardThumbnail(useThumb);
                 else useThumb(scene.thumbnailDataURL ? scene.thumbnailDataURL() : null);
@@ -1026,8 +1210,8 @@
         var objs = (scene.listSceneObjects ? scene.listSceneObjects() : []);
         var sel = scene._selectedObj;
         var gm = (scene.getGizmoMode ? scene.getGizmoMode() : 'off');
-        function nmeOf(url){ var all=SHAPES.concat(MODELS); for(var i=0;i<all.length;i++) if(all[i].v===url) return all[i].t; return 'Objeto'; }
-        if (countHost) countHost.textContent = 'Objetos na cena (' + objs.length + ')';
+        function nmeOf(url){ var all=SHAPES.concat(MODELS); for(var i=0;i<all.length;i++) if(all[i].v===url) return all[i].t; return _t('compObjLabel'); }
+        if (countHost) countHost.textContent = _t('compCount', { n: objs.length });
         if (listHost) {
             if (!objs.length) {
                 listHost.innerHTML = '';
@@ -1058,11 +1242,11 @@
             if (!selObj) { deformHost.innerHTML = ''; }
             else {
                 var ax = scene.getSceneObjAxisScale ? scene.getSceneObjAxisScale() : {x:1,y:1,z:1};
-                deformHost.innerHTML = '<span class="lr04-heading" style="margin-top:12px">Distorcer forma</span>' +
-                    row('Largura X','sl-defx',0.2,3,0.02, fx2(ax.x), 'x') +
-                    row('Altura Y','sl-defy',0.2,3,0.02, fx2(ax.y), 'x') +
-                    row('Profund. Z','sl-defz',0.2,3,0.02, fx2(ax.z), 'x') +
-                    '<button id="def-reset" class="lr04-widebutton">Resetar forma</button>';
+                deformHost.innerHTML = '<span class="lr04-heading" style="margin-top:12px">' + _t('compDeform') + '</span>' +
+                    row(_t('compWidthX'),'sl-defx',0.2,3,0.02, fx2(ax.x), 'x') +
+                    row(_t('compHeightY'),'sl-defy',0.2,3,0.02, fx2(ax.y), 'x') +
+                    row(_t('compDepthZ'),'sl-defz',0.2,3,0.02, fx2(ax.z), 'x') +
+                    '<button id="def-reset" class="lr04-widebutton">' + _t('compResetShape') + '</button>';
                 wireRanges(deformHost);
                 var dr = document.getElementById('def-reset');
                 if (dr) dr.onclick = function () { scene.setSceneObjAxisScale('x',1); scene.setSceneObjAxisScale('y',1); scene.setSceneObjAxisScale('z',1); renderTab(); };
@@ -1073,11 +1257,11 @@
         if (addBtn) addBtn.onclick = function () {
             var pick = $('.lr04-addtype'); var url = pick ? pick.value : null; if (!url) return;
             addBtn.disabled = true;
-            feedback('Adicionando objeto...');
+            feedback(_t('fbAddingObj'));
             scene.addSceneObject(url, function (err, id) {
                 addBtn.disabled = false;
-                if (err) { feedback('Falha ao adicionar', true); return; }
-                scene.selectSceneObject(id); renderTab(); feedback('Objeto adicionado');
+                if (err) { feedback(_t('fbAddFail'), true); return; }
+                scene.selectSceneObject(id); renderTab(); feedback(_t('fbObjAdded'));
             });
         };
         // Gizmo do pane Composicao (atua no objeto selecionado).
@@ -1626,7 +1810,7 @@
                 var res;
                 try { res = LightRefStorage.deleteModel(mid); } catch (e) { res = { ok: false }; }
                 if (res && res.ok === false) {
-                    feedback('Falha ao remover o arquivo do modelo', true);
+                    feedback(_t('fbDeleteFail'), true);
                     // Mantem o card (nao re-renderiza removendo).
                     return;
                 }
@@ -1679,7 +1863,7 @@
             try {
                 if (page === 'library') LightRefStorage.addModelCategory(v.name);
                 else LightRefStorage.addSceneCategory(v.name);
-            } catch (e) { feedback('Falha ao criar categoria', true); return; }
+            } catch (e) { feedback(_t('fbCatCreateFail'), true); return; }
             closeDialog();
             renderCatalog(page);
         };
@@ -1709,7 +1893,7 @@
             try {
                 if (page === 'library') LightRefStorage.renameModelCategory(oldName, v.name);
                 else LightRefStorage.renameSceneCategory(oldName, v.name);
-            } catch (e) { feedback('Falha ao renomear categoria', true); return; }
+            } catch (e) { feedback(_t('fbCatRenameFail'), true); return; }
             closeDialog();
             renderCatalog(page);
         };
@@ -1723,24 +1907,24 @@
     // ---------- Atalhos de teclado (so exibicao; dados em sincronia com os binds) ----------
     function buildShortcutGroups() {
         return [
-            { title: 'Luzes', rows: [
-                { combo: 'Ctrl+Shift+A', desc: 'Adicionar luz' },
-                { combo: 'Ctrl+Shift+X', desc: 'Remover a luz selecionada' },
-                { combo: 'Ctrl+Shift+Z', desc: 'Desfazer a remocao' },
-                { combo: 'Ctrl+Shift+1 a 9', desc: 'Selecionar a luz pelo numero' }
+            { title: _t('scGrpLights'), rows: [
+                { combo: 'Ctrl+Shift+A', desc: _t('scAddLight') },
+                { combo: 'Ctrl+Shift+X', desc: _t('scRemoveLight') },
+                { combo: 'Ctrl+Shift+Z', desc: _t('scUndoRemove') },
+                { combo: 'Ctrl+Shift+1 a 9', desc: _t('scSelectByNum') }
             ] },
-            { title: 'Arraste no visor (segure Shift)', rows: [
-                { combo: 'Shift + arrastar', desc: 'Girar a luz ativa (direcao e altura)' },
-                { combo: 'Ctrl+Shift + arrastar', desc: 'Mudar so a intensidade' },
-                { combo: 'Ctrl+Shift+Alt + arrastar', desc: 'Mudar a cor (horizontal) e a temperatura (vertical)' }
+            { title: _t('scGrpDrag'), rows: [
+                { combo: 'Shift + arrastar', desc: _t('scDragRotate') },
+                { combo: 'Ctrl+Shift + arrastar', desc: _t('scDragIntensity') },
+                { combo: 'Ctrl+Shift+Alt + arrastar', desc: _t('scDragColor') }
             ] },
-            { title: 'Transformar objeto (aba Posicao)', rows: [
-                { combo: 'G', desc: 'Mover' },
-                { combo: 'S', desc: 'Escalar' },
-                { combo: 'R', desc: 'Rotacionar' },
-                { combo: 'X / Y / Z', desc: 'Travar no eixo' },
-                { combo: 'Enter', desc: 'Confirmar' },
-                { combo: 'Esc', desc: 'Cancelar' }
+            { title: _t('scGrpTransform'), rows: [
+                { combo: 'G', desc: _t('scMove') },
+                { combo: 'S', desc: _t('scScale') },
+                { combo: 'R', desc: _t('scRotate') },
+                { combo: 'X / Y / Z', desc: _t('scLockAxis') },
+                { combo: 'Enter', desc: _t('scConfirm') },
+                { combo: 'Esc', desc: _t('scCancel') }
             ] }
         ];
     }

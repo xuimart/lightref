@@ -1,0 +1,9 @@
+LightRef v0.9.0
+
+Novidades desta versao:
+- Interface em dois idiomas: ao escolher English no guia de primeiro uso, todo o painel passa para ingles (abas, botoes, mensagens, atalhos). Volte para portugues quando quiser.
+- O idioma escolhido fica salvo e e aplicado assim que o painel abre.
+
+Continua funcionando do Photoshop 2019 ate as versoes atuais.
+
+Instalacao: feche o Photoshop, execute LightRef_Setup.exe (pede administrador) e abra o Photoshop em Janela > Extensoes > LightRef.
