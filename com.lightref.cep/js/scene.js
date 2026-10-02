@@ -400,6 +400,10 @@
         if (!this._material || this._material.isDisposed) {
             this._material = new BABYLON.PBRMaterial('lightrefMat', this.scene);
             this._material.enableSpecularAntiAliasing = true;
+            // Raise Babylon's default per-material light cap (4). The scene's
+            // ambient HemisphericLight takes one slot, so 4 left only 3 user
+            // lights. Shortcuts select lights 1..9: ambient + 9 = 10.
+            this._material.maxSimultaneousLights = 10;
         }
         if (this.modelRoot) {
             var meshes = this.modelRoot.getChildMeshes ? this.modelRoot.getChildMeshes() : [];
