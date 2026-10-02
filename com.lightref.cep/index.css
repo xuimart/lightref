@@ -171,3 +171,17 @@ body { display: flex; }
 #lr04 .lr04-ob-btn{font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid #3a3a4a;background:#1b1f26;color:#c7ccd3;cursor:pointer}
 #lr04 .lr04-ob-primary{background:#de2246;border-color:#de2246;color:#fff}
 #lr04 .lr04-help{position:absolute;top:8px;right:8px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(27,31,38,.8);border:1px solid #323740;color:#c7ccd3;cursor:pointer}
+/* ---- Menu de ajuda (?) + lista de atalhos ---- */
+#lr04 .lr04-helpmenu{position:absolute;top:42px;right:8px;z-index:7;min-width:150px;background:#1b1f26;border:1px solid #323740;border-radius:8px;padding:4px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#lr04 .lr04-helpmenu[hidden]{display:none}
+#lr04 .lr04-helpmenu-item{display:block;width:100%;text-align:left;font-size:11px;color:#c7ccd3;background:none;border:none;border-radius:6px;padding:7px 9px;cursor:pointer}
+#lr04 .lr04-helpmenu-item:hover,#lr04 .lr04-helpmenu-item:focus{background:#222733;outline:none}
+#lr04 .lr04-sc-card{max-width:360px}
+#lr04 .lr04-sc-group{margin:0 0 14px}
+#lr04 .lr04-sc-group:last-child{margin-bottom:0}
+#lr04 .lr04-sc-title{font-size:11px;color:#de2246;margin:0 0 6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+#lr04 .lr04-sc-list{margin:0}
+#lr04 .lr04-sc-row{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:10px;align-items:baseline;padding:4px 0;border-top:1px solid #2a2f38}
+#lr04 .lr04-sc-row:first-child{border-top:none}
+#lr04 .lr04-sc-combo{margin:0;font-size:11px;color:#e0e0e0;font-weight:600;white-space:nowrap}
+#lr04 .lr04-sc-desc{margin:0;font-size:11px;color:#b7bcc4;line-height:1.4}

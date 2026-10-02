@@ -1,0 +1,9 @@
+LightRef v0.8.0
+
+Novidades desta versao:
+- Botao de ajuda (?) no canto do visor agora abre um menu com duas opcoes: "Rever introducao" (o guia do Xuimzinho) e "Atalhos".
+- Nova tela de Atalhos do teclado, no mesmo estilo do guia, com os atalhos de luzes, de arraste no visor e de transformar objeto.
+
+Continua funcionando do Photoshop 2019 ate as versoes atuais.
+
+Instalacao: feche o Photoshop, execute LightRef_Setup.exe (pede administrador) e abra o Photoshop em Janela > Extensoes > LightRef.

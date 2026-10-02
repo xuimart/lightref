@@ -171,8 +171,7 @@
         });
         $('onboard-finish').addEventListener('click', function () { close(true); });
         $('onboard-close').addEventListener('click', function () { close(true); });
-        var help = $('btn-help');
-        if (help) help.addEventListener('click', function () { open(lang); });
+        // O #btn-help agora e controlado pelo panel.js (menu de ajuda).
     }
 
     // Mostra o wizard so na primeira vez.

@@ -10,10 +10,10 @@
 -->
 <ExtensionManifest Version="6.0"
     ExtensionBundleId="com.lightref"
-    ExtensionBundleVersion="0.7.0"
+    ExtensionBundleVersion="0.8.0"
     ExtensionBundleName="LightRef">
   <ExtensionList>
-    <Extension Id="com.lightref.panel" Version="0.7.0" />
+    <Extension Id="com.lightref.panel" Version="0.8.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
