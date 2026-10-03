@@ -90,6 +90,7 @@
         this.lights.push(light);
         this._applyEnabled(light);
         marker.setEnabled(this.showHelpers && light.enabled);
+        this._markLightsDirty();
         return light;
     };
 
@@ -137,6 +138,22 @@
         }
     };
 
+    // Forca os materiais da cena a recompilar contra o conjunto ATUAL de luzes.
+    // Chamado apos adicionar/remover uma luz: sem isso o PBRMaterial compartilhado
+    // mantem o binding de luzes em cache e as luzes restantes param de iluminar
+    // (ou a nova luz nao entra). Nao recria material algum.
+    LightManager.prototype._markLightsDirty = function () {
+        var scene = this.scene;
+        if (!scene || !scene.materials) return;
+        var flag = (BABYLON.Material && BABYLON.Material.LightDirtyFlag != null)
+            ? BABYLON.Material.LightDirtyFlag
+            : 2;
+        for (var i = 0; i < scene.materials.length; i++) {
+            var m = scene.materials[i];
+            if (m && typeof m.markAsDirty === 'function') m.markAsDirty(flag);
+        }
+    };
+
     LightManager.prototype.remove = function (id) {
         for (var i = 0; i < this.lights.length; i++) {
             if (this.lights[i].id === id) {
@@ -146,6 +163,7 @@
                 if (l._marker) l._marker.dispose();
                 if (l._line) l._line.dispose();
                 this.lights.splice(i, 1);
+                this._markLightsDirty();
                 return true;
             }
         }

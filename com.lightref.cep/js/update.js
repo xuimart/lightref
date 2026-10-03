@@ -23,7 +23,7 @@
     }
 
     // Versao compilada deste build. Bump a cada release (ver SISTEMA_DE_UPDATE).
-    var LIGHTREF_VERSION = '0.9.0';
+    var LIGHTREF_VERSION = '0.9.1';
 
     // Fonte da verdade para "existe versao nova?".
     var VERSION_URL = 'https://www.xuimart.com.br/lightref/version.json';

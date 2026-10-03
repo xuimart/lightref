@@ -1,0 +1,9 @@
+LightRef v0.9.1
+
+Novidades desta versao:
+- Correcao de luzes: agora e possivel usar varias luzes ao mesmo tempo. Antes, a partir da quarta luz ela nao iluminava o modelo.
+- Correcao: ao remover uma luz, as demais continuam funcionando normalmente (antes a cena podia ficar escura).
+
+Continua funcionando do Photoshop 2019 ate as versoes atuais.
+
+Instalacao: feche o Photoshop, execute LightRef_Setup.exe (pede administrador) e abra o Photoshop em Janela > Extensoes > LightRef.
