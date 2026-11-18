@@ -5,15 +5,15 @@
    * enable-nodejs e mixed-context sao obrigatorios (require, child_process, fs)
    * PHXS + PHSP cobrem as duas variantes de host do Photoshop
   Especifico do LightRef:
-   * o painel roda WebGL (Three.js). O CEF do CEP suporta WebGL nativamente;
+   * o painel roda WebGL (Babylon.js e shaders artísticos). O CEF do CEP suporta WebGL nativamente;
      mantemos a janela maior por causa do viewport 3D.
 -->
 <ExtensionManifest Version="6.0"
     ExtensionBundleId="com.lightref"
-    ExtensionBundleVersion="0.9.1"
+    ExtensionBundleVersion="1.0.0"
     ExtensionBundleName="LightRef">
   <ExtensionList>
-    <Extension Id="com.lightref.panel" Version="0.9.1" />
+    <Extension Id="com.lightref.panel" Version="1.0.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -45,7 +45,7 @@
           <Geometry>
             <Size><Height>640</Height><Width>360</Width></Size>
             <MinSize><Height>420</Height><Width>300</Width></MinSize>
-            <MaxSize><Height>1600</Height><Width>900</Width></MaxSize>
+            <MaxSize><Height>1600</Height><Width>1000</Width></MaxSize>
           </Geometry>
           <Icons>
             <Icon Type="Normal">./icons/icon-normal.png</Icon>

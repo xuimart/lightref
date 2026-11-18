@@ -1,0 +1,14 @@
+{
+  "name": "lightref-release",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build-shaders.cjs",
+    "test": "node tools/test-release.cjs",
+    "test:browser": "node tools/browser/test.cjs"
+  },
+  "devDependencies": {
+    "@remotion/renderer": "4.0.543",
+    "fast-check": "4.10.2"
+  }
+}

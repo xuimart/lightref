@@ -20,7 +20,13 @@
     // Centraliza a selecao de luz: guarda o id e avisa a cena para os atalhos.
     function selectLight(id) { selectedLightId = id; if (scene && scene.setActiveLight) scene.setActiveLight(id); captureSession(); }
     // Renderiza os icones lucide presentes no DOM (estaticos do mockup).
-    function refreshIcons() { try { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); } catch (e) {} }
+    function refreshIcons() { try { decorateMenus();if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); } catch (e) {} }
+    function decorateMenus() {
+        var maps=[['data-tab',{material:'gem',light:'lightbulb',atmosphere:'trees',lens:'camera',adjust:'sliders-horizontal',position:'move-3d',composition:'shapes'}],['data-page',{studio:'box',library:'images',scenes:'clapperboard'}],['data-help',{intro:'book-open',shortcuts:'keyboard'}],['data-view',{front:'scan-face',three:'box',profile:'panel-right',top:'arrow-down'}],['data-gizmo',{rotate:'rotate-cw',move:'move',off:'ban'}],['data-projection',{persp:'box',ortho:'grid-3x3'}],['data-daylight',{sunrise:'sunrise',noon:'sun',afternoon:'sunset',night:'moon'}],['data-action',{'reset-view':'rotate-ccw','reset-adjust':'rotate-ccw','reset-curve':'rotate-ccw','add-object':'plus','new-cat':'folder-plus','save-scene':'save','rename-cat':'pencil'}]];
+        function icon(el,name){if(!el||!name||el.querySelector('svg,[data-lucide]'))return;var glyph=document.createElement('i');glyph.dataset.lucide=name;glyph.className='lr04-menu-icon';glyph.setAttribute('aria-hidden','true');el.insertBefore(glyph,el.firstChild);el.classList.add('lr04-icon-menu');}
+        maps.forEach(function(entry){$all('button['+entry[0]+']').forEach(function(el){icon(el,entry[1][el.getAttribute(entry[0])]);});});
+        $all('.lr04-drawertoggle').forEach(function(el){icon(el,'folder');});$all('.lr04-material-finish>summary').forEach(function(el){icon(el,'sliders-horizontal');});$all('.lr04-optics>summary').forEach(function(el){icon(el,'gem');});icon($('#env-drawer-head'),'image');
+    }
     // Ctrl+Shift+1..5 seleciona rapidamente a luz correspondente.
     function bindLightKeys() {
         window.addEventListener('keydown', function (e) {
@@ -66,6 +72,11 @@
         });
     }
     var currentTab = 'light', currentPage = 'studio';
+    // --- Estado do editor de curvas (Aba Ajustes). Persiste entre renders na sessao. ---
+    var curveChannel = 'lum';           // canal ativo: 'lum' | 'r' | 'g' | 'b'
+    var _histoBins = null;              // ultimo histograma (array de 256 bins) ou null
+    var _histoAt = 0;                   // timestamp (ms) da ultima amostragem do histograma
+    var _histoCanvas = null;            // canvas 2D offscreen reutilizado (128x128)
     function $(s, ctx) { return (ctx || document).querySelector(s); }
     function $all(s, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(s)); }
 
@@ -137,7 +148,8 @@
         { v:'clay', t:'Clay' }, { v:'skin', t:'Pele' }, { v:'marble', t:'Marmore' },
         { v:'jade', t:'Jade' }, { v:'gold', t:'Ouro' }, { v:'copper', t:'Cobre' },
         { v:'bronze', t:'Bronze' }, { v:'metal', t:'Metal' },
-        { v:'pearl', t:'Perola' }, { v:'white', t:'Branco' }
+        { v:'pearl', t:'Perola' }, { v:'white', t:'Branco' }, { v:'cel', t:'Cel + Line Art' },
+        { v:'glass', t:'Vidro / Cristal' }, { v:'diamond', t:'Diamante' }, { v:'emerald', t:'Esmeralda' }, { v:'ruby', t:'Rubi' }
     ];
 
     function getLightNames() {
@@ -164,7 +176,12 @@
     function removeSelectedLight() {
         var l = scene.lightManager.get ? scene.lightManager.get(selectedLightId) : null;
         if (!l) { feedback(_t('fbNoLight'), true); return; }
-        deletedLights.push({ name:l.name, color:l.color, intensity:l.intensity, azimuth:l.azimuth, elevation:l.elevation, enabled:l.enabled });
+        if (window.LightRefLightTypes) { window.__lrLightRemoval = LightRefLightTypes.prepareChange(scene,{removeId:l.id}).then(function(){ removePreparedLight(l.id); }).catch(function(error){ feedback(error.message,true); }); return; }
+        removePreparedLight(l.id);
+    }
+    function removePreparedLight(id) {
+        var l = scene.lightManager.get(id);if(!l)return;
+        deletedLights.push(scene.lightManager.toDescriptor ? scene.lightManager.toDescriptor(l) : { name:l.name, color:l.color, intensity:l.intensity, azimuth:l.azimuth, elevation:l.elevation, enabled:l.enabled });
         var wasId = l.id;
         scene.lightManager.remove(wasId);
         if (selectedLightId === wasId) selectLight(scene.lightManager.lights.length ? scene.lightManager.lights[0].id : null);
@@ -175,11 +192,15 @@
     function undoLight() {
         if (!deletedLights.length) { feedback(_t('fbNoUndo'), true); return; }
         var d = deletedLights.pop();
-        var nl = scene.lightManager.add(d);
-        selectLight(nl.id);
-        if (currentTab === 'light') renderTab();
-        feedback(_t('fbLightRestored', { nome: d.name||'' }));
-        captureSession();
+        function restore() {
+            var nl = scene.lightManager.add(d);
+            selectLight(nl.id);
+            if (currentTab === 'light') renderTab();
+            feedback(_t('fbLightRestored', { nome: d.name||'' }));
+            captureSession();
+        }
+        if (window.LightRefLightTypes) { window.__lrLightUndo = LightRefLightTypes.prepareChange(scene,{add:d}).then(restore).catch(function(error){ deletedLights.push(d); feedback(error.message,true); }); return; }
+        restore();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -194,10 +215,11 @@
         initScene();
         bindMiddleBar();
         bindViewTools();
+        bindPanelResize();
         bindTabs();
         bindPages();
         bindDialog();
-        bindMaterialPopover();
+        bindMaterialPanel();
         bindColorInputs();
         setupUpdates();
         bindLightKeys();
@@ -344,7 +366,9 @@
         function setTxt(sel, key) { var e = el(sel); if (e) e.textContent = _t(key); }
         function setAria(sel, key) { var e = el(sel); if (e) { e.setAttribute('aria-label', _t(key)); e.setAttribute('data-tooltip', _t(key)); } }
         /* Tabs */
+        setTxt('[data-tab="material"]', 'tabMaterial');
         setTxt('[data-tab="light"]', 'tabLight');
+        setTxt('[data-tab="atmosphere"]', 'tabAtmosphere');
         setTxt('[data-tab="lens"]', 'tabLens');
         setTxt('[data-tab="adjust"]', 'tabAdjust');
         setTxt('[data-tab="position"]', 'tabPosition');
@@ -463,14 +487,14 @@
         var env = document.getElementById('env-drawer-body');
         return {
             selectedLightId: selectedLightId,
-            hdrBackground: ((document.getElementById('ck-envbg') || {}).checked !== false),
+            hdrBackground: !!(scene && scene._skybox && scene._skybox.isEnabled() && !scene._skyColorOverride),
             page: currentPage,
             tab: currentTab,
             floor: floorOn,
             guides: guidesOn,
             reference: refOn,
             collapsed: !!(host && host.classList.contains('lr04-collapsed')),
-            materialOpen: !!(vp && vp.classList.contains('lr04-matopen')),
+            materialOpen: false,
             envDrawerOpen: !!(env && !env.hasAttribute('hidden'))
         };
     }
@@ -556,6 +580,13 @@
         if (cfg.material) scene.setMaterial(cfg.material);
         if (cfg.environment && scene.setEnvironment) scene.setEnvironment(cfg.environment);
         if (cfg.bg && scene.setBackground) { scene.setBackground(cfg.bg.transparent ? 'transparent' : 'color', cfg.bg.color || '#3a4a6a'); var vp0 = $('.lr04-viewport'); if (vp0) vp0.classList.toggle('transparent', !!cfg.bg.transparent); }
+        if (cfg.atmosphere && scene.setAtmosphere) scene.setAtmosphere(cfg.atmosphere);
+        var atmosphereSaveTimer = null;
+        scene.onAtmosphereEdit = function () {
+            syncMaterialPanel(); captureSession();
+            if (atmosphereSaveTimer) clearTimeout(atmosphereSaveTimer);
+            atmosphereSaveTimer = setTimeout(function () { LightRefStorage.writeConfig({ atmosphere:scene.getAtmosphere(), bg:scene.getBackground() }); }, 300);
+        };
         // Composicao oculta, modelo principal visivel (independe de restaurar ou nao).
         if (scene.setCompositionVisible) scene.setCompositionVisible(false);
         if (scene.setMainModelVisible) scene.setMainModelVisible(true);
@@ -567,7 +598,7 @@
         loadModelSafe(MODELS[0].v);   // sempre abre no Asaro (modelo padrao)
         var l = scene.lightManager.add({ name: nextLightName() });
         selectLight(l.id);
-        syncMaterialPopover();
+        syncMaterialPanel();
         captureSession();
     }
     // Restaura um Estado_da_Sessao validado no motor via applySessionState.
@@ -587,7 +618,7 @@
                 else { selectLight(null); }
             },
             applyUi: function (ui) { applyRestoredUi(ui); },
-            afterApply: function () { syncMaterialPopover(); renderTab(); }
+            afterApply: function () { syncMaterialPanel(); renderTab(); }
         });
     }
     // Aplica o Estado_da_Interface restaurado ao DOM e as variaveis internas.
@@ -601,14 +632,12 @@
             if (ui.reference != null) { refOn = !!ui.reference; if (host) host.classList.toggle('lr04-reference', refOn); var br = document.querySelector('[data-toggle="reference"]'); if (br) br.setAttribute('aria-pressed', String(refOn)); }
             if (ui.collapsed != null && host) host.classList.toggle('lr04-collapsed', !!ui.collapsed);
             // Popover de material.
-            var pop = $('.lr04-material'); var mtoggle = $('[data-toggle="materialOpen"]'); var vp = $('.lr04-viewport');
-            if (pop) { if (ui.materialOpen) { pop.removeAttribute('hidden'); if (vp) vp.classList.add('lr04-matopen'); } else { pop.setAttribute('hidden', ''); if (vp) vp.classList.remove('lr04-matopen'); } if (mtoggle) { mtoggle.setAttribute('aria-expanded', ui.materialOpen ? 'true' : 'false'); mtoggle.setAttribute('aria-pressed', ui.materialOpen ? 'true' : 'false'); } }
             // Gaveta de ambiente/HDR.
             var env = document.getElementById('env-drawer-body'); if (env) { if (ui.envDrawerOpen) env.removeAttribute('hidden'); else env.setAttribute('hidden', ''); }
             // Pagina ativa.
             if (ui.page) { currentPage = ui.page; $all('.lr04-footer nav button[data-page]').forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-page') === currentPage)); }); if (typeof showPage === 'function') showPage(currentPage); }
             // Aba ativa (nao sobrepor com o default 'light').
-            if (ui.tab) { setActiveTab(ui.tab); }
+            if (ui.tab || ui.materialOpen) { setActiveTab(ui.materialOpen ? 'material' : ui.tab); }
             setTimeout(function () { try { if (scene && scene.engine) scene.engine.resize(); } catch (e2) {} }, 80);
         } catch (e) {}
     }
@@ -744,6 +773,39 @@
     }
 
     // ---------- Ferramentas do visor + filtros ----------
+    function bindPanelResize() {
+        var handle=$('.lr04-resize-handle'),studio=$('.lr04-studio'),middle=$('.lr04-middle'),host=stateHost();
+        if(!handle||!studio||!middle)return;
+        var preferred=.3,drag=null;
+        try{var cfg=LightRefStorage.readConfig();if(typeof cfg.editorMenuShare==='number'&&isFinite(cfg.editorMenuShare))preferred=Math.max(.12,Math.min(.8,cfg.editorMenuShare));}catch(e){}
+        function limits(){var available=studio.getBoundingClientRect().height-8;if(available<=0)return null;var min=Math.min(available*.65,Math.max(126,middle.offsetHeight+48));return {available:available,min:min/available,max:Math.max(min,Math.min(available*.8,available-96))/available};}
+        function apply(){
+            if(host.classList.contains('lr04-collapsed')||host.classList.contains('lr04-reference'))return;
+            var bounds=limits();if(!bounds)return;var share=Math.max(bounds.min,Math.min(bounds.max,preferred));
+            studio.style.setProperty('--lr-view-fr',((1-share)*100)+'fr');studio.style.setProperty('--lr-menu-fr',(share*100)+'fr');
+            handle.setAttribute('aria-valuemin',String(Math.ceil(bounds.min*100)));handle.setAttribute('aria-valuemax',String(Math.floor(bounds.max*100)));handle.setAttribute('aria-valuenow',String(Math.round(share*100)));handle.setAttribute('aria-valuetext',Math.round(share*100)+'% para edição');
+        }
+        function save(){try{LightRefStorage.writeConfig({editorMenuShare:preferred});}catch(e){console.warn('Panel size',e);}}
+        function finish(cancel){if(!drag)return;var old=drag;drag=null;if(cancel)preferred=old.before;document.body.classList.remove('lr04-resizing');if(handle.hasPointerCapture(old.id))handle.releasePointerCapture(old.id);apply();if(!cancel)save();}
+        function move(e){var bounds=limits();if(!bounds)return;preferred=Math.max(bounds.min,Math.min(bounds.max,(studio.getBoundingClientRect().bottom-e.clientY-4)/bounds.available));apply();}
+        handle.addEventListener('pointerdown',function(e){if(e.button!==0||drag)return;drag={id:e.pointerId,before:preferred};handle.focus();try{handle.setPointerCapture(e.pointerId);}catch(_){}document.body.classList.add('lr04-resizing');e.preventDefault();});
+        // Window listeners also cover CEP builds that drop capture when focus changes.
+        window.addEventListener('pointermove',function(e){if(!drag||e.pointerId!==drag.id)return;if(e.buttons===0){finish(false);return;}move(e);e.preventDefault();e.stopPropagation();},true);
+        window.addEventListener('pointerup',function(e){if(drag&&e.pointerId===drag.id){move(e);finish(false);e.preventDefault();e.stopPropagation();}},true);
+        window.addEventListener('pointercancel',function(e){if(drag&&e.pointerId===drag.id)finish(true);},true);
+        // Capture loss alone is not cancellation: CEP may drop it before the next move.
+        window.addEventListener('blur',function(){finish(true);});
+        handle.addEventListener('dblclick',function(){finish(true);preferred=.3;apply();save();});
+        handle.addEventListener('keydown',function(e){
+            if(e.key==='Escape'&&drag){finish(true);e.preventDefault();return;}
+            var bounds=limits();if(!bounds)return;var current=Math.max(bounds.min,Math.min(bounds.max,preferred)),step=e.shiftKey ? .1 : .02;
+            if(e.key==='ArrowUp')preferred=Math.min(bounds.max,current+step);else if(e.key==='ArrowDown')preferred=Math.max(bounds.min,current-step);else if(e.key==='Home')preferred=bounds.min;else if(e.key==='End')preferred=bounds.max;else return;
+            e.preventDefault();apply();save();
+        });
+        if(window.ResizeObserver){var observer=new ResizeObserver(apply);observer.observe(studio);observer.observe(middle);}
+        if(window.MutationObserver)new MutationObserver(apply).observe(host,{attributes:true,attributeFilter:['class']});
+        window.addEventListener('resize',apply);apply();
+    }
     var floorOn = true, guidesOn = true, refOn = false;
     function bindViewTools() {
         bindAction('reset-view', function () { scene.setCameraPreset('front'); });
@@ -788,26 +850,8 @@
         var cl = document.getElementById('sl-cutout'); if (cl) { cl.value = p.cutoutLevels; updateRangeFill(cl); var clo = document.getElementById('sl-cutout-o'); if (clo) clo.textContent = p.cutoutLevels; }
     }
 
-    // ---------- Material popover ----------
-    function bindMaterialPopover() {
-        var toggle = $('[data-toggle="materialOpen"]');
-        var pop = $('.lr04-material');
-        if (toggle && pop) {
-            toggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-                var open = pop.hasAttribute('hidden');
-                if (open) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                toggle.setAttribute('aria-pressed', open ? 'true' : 'false');
-                var vp = $('.lr04-viewport'); if (vp) vp.classList.toggle('lr04-matopen', open);
-                captureSession();
-            });
-            document.addEventListener('click', function (e) {
-                if (!pop.hasAttribute('hidden') && !pop.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
-                    pop.setAttribute('hidden',''); toggle.setAttribute('aria-expanded','false'); toggle.setAttribute('aria-pressed','false'); var vp2 = $('.lr04-viewport'); if (vp2) vp2.classList.remove('lr04-matopen');
-                }
-            });
-        }
+    // ---------- Material panel ----------
+    function bindMaterialPanel() {
         var msel = $('.lr04-material select[data-setting="material"]');
         if (msel) msel.addEventListener('change', function () {
             scene.setMaterial(this.value);
@@ -819,7 +863,7 @@
         var fc = $('.lr04-material input[data-setting="formColor"]');
         if (fc) fc.addEventListener('input', function () { scene.setFormColor(this.value); captureSession(); });
         var sca = $('.lr04-material input[data-setting="scatter"]');
-        if (sca) sca.addEventListener('input', function () { scene.setMaterialParam('scatter', this.value); });
+        if (sca) sca.addEventListener('input', function () { scene.setMaterialParam('scatter', this.value); captureSession(); });
         // Fundo: cor solida ou transparente (xadrez).
         var bgc = $('#bg-color'), bgt = $('#bg-transp');
         var bgSaveTimer = null;
@@ -828,12 +872,13 @@
             // travava o color picker quando disparada a cada pixel; por isso e
             // adiada (debounce) para 300 ms apos o usuario parar de mexer.
             var tr = bgt && bgt.checked;
-            scene.setBackground(tr ? 'transparent' : 'color', bgc ? bgc.value : '#3a4a6a');
+            var skyColor = bgc ? bgc.value : scene.getBackground().color;
+            scene.setBackground(tr ? 'transparent' : 'color', skyColor);
             var vp = $('.lr04-viewport'); if (vp) vp.classList.toggle('transparent', !!tr);
             if (bgSaveTimer) clearTimeout(bgSaveTimer);
             bgSaveTimer = setTimeout(function () {
                 bgSaveTimer = null;
-                try { LightRefStorage.writeConfig({ bg: { transparent: !!tr, color: bgc ? bgc.value : '#3a4a6a' } }); } catch (e) {}
+                try { LightRefStorage.writeConfig({ bg: { transparent: !!tr, color: skyColor } }); } catch (e) {}
             }, 300);
             captureSession();
         }
@@ -875,7 +920,7 @@
         }, true);
     }
 
-    function syncMaterialPopover() {
+    function syncMaterialPanel() {
         var msel = $('.lr04-material select[data-setting="material"]'); if (msel && scene.getMaterial) msel.value = scene.getMaterial();
         var fc = $('.lr04-material input[data-setting="formColor"]'); if (fc && scene.getFormColor) fc.value = scene.getFormColor();
         var p = scene.getMaterialParams ? scene.getMaterialParams() : {};
@@ -886,14 +931,45 @@
     function renderMaterialFields() {
         var host = $('.lr04-material-fields'); if (!host) return;
         var p = scene.getMaterialParams ? scene.getMaterialParams() : {};
+        var cel = scene.getMaterial() === 'cel', scatter = $('.lr04-material input[data-setting="scatter"]'), artistic = $('#art-material-controls');
+        if (scatter && host.contains(scatter)) host.parentNode.insertBefore(scatter.parentElement,host.nextSibling);
+        if (scatter) scatter.parentElement.hidden = cel;
+        if (artistic) artistic.hidden = false;
+        function qualityFields(){return row('Suavizar normais','sl-surface-smooth',0,1,.05,fx2(p.surfaceSmooth||0),'')+'<label class="lr04-check lr04-material-quality"><input type="checkbox" id="material-shadow-filter"'+(p.shadowFilter===0?'':' checked')+'>Filtrar sombras</label>';}
+        function bindQuality(){var input=$('#sl-surface-smooth',host);if(input){input.setAttribute('aria-label','Suavizar normais');input.title='Suaviza a iluminação da superfície sem alterar a forma da malha.';}var filter=$('#material-shadow-filter',host);if(filter)filter.onchange=function(){scene.setMaterialParam('shadowFilter',this.checked?1:0);captureSession();};}
+        var optics=[['transparency','Transparência',0,1,.01],['ior','IOR',1,2.6,.01],['thickness','Espessura',.01,3,.01],['absorption','Absorção',0,4,.05],['dispersion','Dispersão',0,1,.01],['caustics','Cáustica',0,2,.05]];
+        function opticsFields(){return '<details class="lr04-optics"'+(Number(p.transparency)>.001?' open':'')+'><summary>Transparência e cristal</summary><div class="lr04-optics-fields">'+optics.map(function(f){var defaults={transparency:0,ior:1.5,thickness:.35,absorption:1,dispersion:0,caustics:0};return row(f[1],'mat-'+f[0],f[2],f[3],f[4],p[f[0]]==null?defaults[f[0]]:p[f[0]],'');}).join('')+'<div class="lr04-optics-switches"><label class="lr04-check" title="Refração na entrada e na saída de superfícies fechadas."><input type="checkbox" id="mat-solid-refraction"'+(p.solidRefraction===0?'':' checked')+'>Volume sólido</label><label class="lr04-check" title="Preserva a distorção do cenário na imagem exportada."><input type="checkbox" id="mat-export-background"'+(p.exportBackground===1?' checked':'')+'>Exportar com fundo</label></div></div></details>';}
+        function bindOptics(){$('#mat-solid-refraction',host).onchange=function(){scene.setMaterialParam('solidRefraction',this.checked?1:0);captureSession();};optics.forEach(function(f){var input=$('#mat-'+f[0],host);input.setAttribute('aria-label',f[1]);if(f[0]==='caustics')input.title='Concentração aproximada da luz transmitida no piso.';updateRangeFill(input);input.oninput=function(){scene.setMaterialParam(f[0],Number(this.value));updateRangeFill(this);$('#mat-'+f[0]+'-o',host).textContent=this.value;captureSession();};});$('#mat-export-background',host).onchange=function(){scene.setMaterialParam('exportBackground',this.checked?1:0);captureSession();};}
+        if (cel) {
+            var fields = [['celBands','Faixas',2,6,1],['celThreshold','Limiar',0,1,.01],['celSoftness','Transição',0,.3,.01],['celShadow','Luz na sombra',0,1,.01],['lineWidth','Espessura',.5,5,.25],['lineDetail','Detalhe',0,1,.01]];
+            host.innerHTML = '<div class="lr04-cel-group"><div class="lr04-cel-heading">Cel shading</div>' + fields.slice(0,4).map(function(f){return row(f[1],'cel-'+f[0],f[2],f[3],f[4],p[f[0]],'');}).join('') + '</div>' +
+                '<div class="lr04-line-group"><label class="lr04-check lr04-cel-heading"><input type="checkbox" id="cel-line-enabled"'+(p.lineEnabled?' checked':'')+'>Line art</label>' + fields.slice(4).map(function(f){return row(f[1],'cel-'+f[0],f[2],f[3],f[4],p[f[0]],f[0]==='lineWidth'?' px':'');}).join('') +
+                '<label class="lr04-cel-color">Cor da linha<input type="color" id="cel-line-color" value="'+escapeText(p.lineColor||'#16151c')+'" aria-label="Cor da linha"></label></div>' +
+                '<details class="lr04-material-finish"><summary>Ajustes do material</summary><div class="lr04-pbr-fields">'+
+                row('Rugosidade','sl-roughness',0,1,.01,fx2(p.roughness),'')+row('Metálico','sl-metalness',0,1,.01,fx2(p.metalness),'')+
+                row('Especular','sl-specular',0,1,.01,fx2(p.specular),'')+row('Reflexo','sl-reflection',0,2,.02,fx2(p.reflection),'')+
+                row('Subsurface','sl-subsurface',0,1,.01,fx2(p.subsurface),'')+qualityFields()+'</div><label class="lr04-cel-color">Cor subsurface<input type="color" id="cel-scatter" value="'+escapeText(p.scatter||'#000000')+'" aria-label="Cor subsurface"></label></details>';
+            fields.forEach(function(f){var input=$('#cel-'+f[0],host);input.setAttribute('aria-label',f[1]);updateRangeFill(input);input.oninput=function(){scene.setMaterialParam(f[0],Number(this.value));updateRangeFill(this);$('#cel-'+f[0]+'-o',host).textContent=this.value+(f[0]==='lineWidth'?' px':'');captureSession();};});
+            $('#cel-line-enabled',host).onchange=function(){scene.setMaterialParam('lineEnabled',this.checked?1:0);captureSession();};
+            $('#cel-line-color',host).oninput=function(){scene.setMaterialParam('lineColor',this.value);captureSession();};
+            wireRanges($('.lr04-pbr-fields',host));
+            bindQuality();
+            $('#cel-scatter',host).oninput=function(){scene.setMaterialParam('scatter',this.value);captureSession();};
+            host.insertAdjacentHTML('beforeend',opticsFields());bindOptics();
+            syncMaterialPanel();refreshIcons();return;
+        }
         host.innerHTML =
             row('Rugosidade','sl-roughness',0,1,0.01, fx2(p.roughness), '') +
             row('Metalico','sl-metalness',0,1,0.01, fx2(p.metalness), '') +
             row('Especular','sl-specular',0,1,0.01, fx2(p.specular), '') +
             row('Reflexo','sl-reflection',0,2,0.02, fx2(p.reflection), '') +
-            row('Subsurface','sl-subsurface',0,1,0.01, fx2(p.subsurface), '');
+            row('Subsurface','sl-subsurface',0,1,0.01, fx2(p.subsurface), '') + qualityFields();
         wireRanges(host);
-        syncMaterialPopover();
+        bindQuality();
+        if (scatter) host.appendChild(scatter.parentElement);
+        host.insertAdjacentHTML('beforeend',opticsFields());bindOptics();
+        syncMaterialPanel();
+        refreshIcons();
     }
 
     // ---------- Abas ----------
@@ -984,18 +1060,23 @@
 
     // Renderiza o conteudo da aba atual nos subcontainers ja presentes no HTML.
     function renderTab() {
-        if (currentTab === 'light') renderLight();
+        if (currentTab === 'material') renderMaterialFields();
+        else if (currentTab === 'light') renderLight();
+        else if (currentTab === 'atmosphere') { LightRefAtmosphere.render(scene); renderEnvSection(); syncMaterialPanel(); }
         else if (currentTab === 'lens') renderLens();
         else if (currentTab === 'adjust') renderAdjust();
         else if (currentTab === 'pos') renderPos();
         else if (currentTab === 'comp') renderComposition();
+        refreshIcons();
     }
 
     // ---------- Templates de rows ----------
     function row(label, id, min, max, step, val, suffix) {
+        var precision = Math.min(3, (String(step).split('.')[1]||'').length);
+        var display = isFinite(Number(val)) ? Number(val).toFixed(precision) : val;
         return '<div class="lr04-row"><span>' + label + '</span>' +
                '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '">' +
-               '<output id="' + id + '-o">' + val + (suffix||'') + '</output></div>';
+               '<output id="' + id + '-o">' + display + (suffix||'') + '</output></div>';
     }
     function fx2(v) { return (v == null ? 0 : v).toFixed ? (+v).toFixed(2) : v; }
 
@@ -1017,8 +1098,9 @@
     function renderLight() {
         var chipsHost = $('.lr04-lightchips'); if (!chipsHost) return;
         var chips = scene.lightManager.lights.map(function (l) {
-            return '<div class="lr04-chip'+(l.id===selectedLightId?' active':'')+'" data-id="'+l.id+'">' +
-                   '<button data-light="'+l.id+'"><span class="lr04-dot" style="background:'+l.color+'"></span>'+l.name+'</button>' +
+            return '<div class="lr04-chip'+(l.id===selectedLightId?' active':'')+(l.enabled?'':' is-off')+'" data-id="'+l.id+'">' +
+                   '<button data-light="'+l.id+'"><span class="lr04-dot" style="background:'+l.color+'"></span>'+escapeText(l.name)+'</button>' +
+                   '<button type="button" data-toggle-light="'+l.id+'" aria-pressed="'+String(l.enabled)+'" aria-label="'+(l.enabled?'Ocultar':'Mostrar')+' luz '+escapeText(l.name)+'" title="'+(l.enabled?'Ocultar':'Mostrar')+' luz"><i data-lucide="'+(l.enabled?'eye':'eye-off')+'" aria-hidden="true"></i></button>' +
                    '<button data-remove="'+l.id+'" title="' + _t('lightRemove') + '"><i data-lucide="x" aria-hidden="true"></i></button></div>';
         }).join('');
         chipsHost.innerHTML = chips + '<button id="add-light" class="lr04-addlight" title="' + _t('lightAdd') + '"><i data-lucide="plus" aria-hidden="true"></i></button>';
@@ -1031,6 +1113,7 @@
                     row(_t('lightRotate'),'sl-azimuth',0,360,1, l.azimuth, '\u00b0') +
                     row(_t('lightHeight'),'sl-elevation',-90,90,1, l.elevation, '\u00b0');
                 wireRanges(fieldsHost);
+                if (window.LightRefLightTypes) LightRefLightTypes.render(scene,l,fieldsHost,captureSession,renderTab);
             } else {
                 fieldsHost.innerHTML = '';
             }
@@ -1046,6 +1129,7 @@
         // Chips: selecionar / remover / adicionar.
         var add = $('#add-light'); if (add) add.onclick = function () { addLight(); };
         $all('.lr04-lightchips [data-light]').forEach(function (b) { b.onclick = function () { selectLight(parseInt(this.getAttribute('data-light'),10)); renderTab(); }; });
+        $all('.lr04-lightchips [data-toggle-light]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var id=parseInt(this.getAttribute('data-toggle-light'),10),light=scene.lightManager.get(id);if(light){scene.lightManager.update(id,'enabled',!light.enabled);captureSession();renderLight();}};});
         $all('.lr04-lightchips [data-remove]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); var id = parseInt(this.getAttribute('data-remove'),10); selectLight(id); removeSelectedLight(); }; });
         refreshIcons();
     }
@@ -1071,8 +1155,6 @@
         (function(){ var fh = document.querySelector('#lr04-pane-lens .lr04-heading'); if (fh) fh.textContent = _t('lensFraming'); })();
         /* Update Resetar camera button. */
         (function(){ var rc = document.querySelector('#lr04-pane-lens [data-action="reset-view"]'); if (rc) rc.textContent = _t('lensResetCamera'); })();
-        // Secao Ambiente / HDR recolhivel, inserida na coluna direita da lente.
-        renderEnvSection();
     }
     // Secao Ambiente / HDR: reaproveita ENVIRONMENTS e setEnvironment/setEnvIntensity.
     function renderEnvSection() {
@@ -1083,12 +1165,13 @@
             return '<option value="'+e.v+'"'+(sel?' selected':'')+'>'+e.t+'</option>';
         }).join('');
         var ei = scene.getEnvIntensity ? scene.getEnvIntensity() : 0.8;
+        var wasOpen = !$('#env-drawer-body') || !$('#env-drawer-body').hidden;
         wrap.innerHTML =
-            '<button type="button" class="lr04-widebutton" id="env-drawer-head" aria-expanded="false">' + _t('lensEnvSection') + '</button>' +
-            '<div id="env-drawer-body" hidden style="margin-top:8px">' +
+            '<button type="button" class="lr04-widebutton" id="env-drawer-head" aria-expanded="'+String(wasOpen)+'">HDR</button>' +
+            '<div id="env-drawer-body"'+(wasOpen?'':' hidden')+' style="margin-top:8px">' +
             '<div class="lr04-row"><span>' + _t('lensEnvMap') + '</span><select id="env-select" style="grid-column:2 / span 2">'+envOpts+'</select></div>' +
             row(_t('lensEnvIntensity'),'sl-envint',0,2,0.05, (ei).toFixed(2), '') +
-            '<label class="lr04-check"><input type="checkbox" id="ck-envbg" checked>' + _t('lensEnvBg') + '</label>' +
+            '<label class="lr04-check"><input type="checkbox" id="ck-envbg"'+(!curEnv||scene._skybox&&scene._skybox.isEnabled()?' checked':'')+'>' + _t('lensEnvBg') + '</label>' +
             '</div>';
         var head = $('#env-drawer-head'), body = $('#env-drawer-body');
         if (head && body) head.onclick = function () {
@@ -1120,14 +1203,323 @@
             wireRanges(tonal);
         }
         // Niveis (posterizar) e Degraus (cutout) nos campos dedicados.
-        var lv = $('.lr04-levelsfield'); if (lv) { lv.innerHTML = row(_t('adjLevels'),'sl-posterize',2,16,1, p.posterizeLevels, ''); wireRanges(lv); }
-        var st = $('.lr04-stepsfield'); if (st) { st.innerHTML = row(_t('adjSteps'),'sl-cutout',2,8,1, p.cutoutLevels, ''); wireRanges(st); }
+        var lv = $('.lr04-levelsfield'); if (lv) { lv.innerHTML = row(_t('adjLevels'),'sl-posterize',2,16,1, p.posterizeLevels, ''); wireRanges(lv); lv.querySelector('input').setAttribute('aria-label',_t('adjLevels')); }
+        var st = $('.lr04-stepsfield'); if (st) { st.innerHTML = row(_t('adjSteps'),'sl-cutout',2,8,1, p.cutoutLevels, ''); wireRanges(st); st.querySelector('input').setAttribute('aria-label',_t('adjSteps')); }
         // Checkboxes fixos do HTML.
         var cp = $('.lr04-inspector input[data-setting="poster"]'); if (cp) { cp.checked = !!p.posterizeOn; cp.onchange = function(){ scene.postfx.setParam('posterizeOn', this.checked?1:0); syncFilterButtons(); }; }
         var cc = $('.lr04-inspector input[data-setting="cutout"]'); if (cc) { cc.checked = !!p.cutoutOn; cc.onchange = function(){ scene.postfx.setParam('cutoutOn', this.checked?1:0); syncFilterButtons(); }; }
         var cg = $('.lr04-inspector input[data-setting="gray"]'); if (cg) { cg.checked = !!p.blackWhite; cg.onchange = function(){ scene.postfx.setParam('blackWhite', this.checked?1:0); syncFilterButtons(); }; }
         (function(){ var ra = document.querySelector('[data-action="reset-adjust"]'); if (ra) ra.textContent = _t('adjReset'); })();
         bindAction('reset-adjust', function () { scene.postfx.reset(); renderTab(); syncFilterButtons(); });
+        // Editor de curvas (Task 5/6): construido no container dedicado abaixo dos ajustes tonais.
+        buildCurveEditor();
+    }
+
+    // ---------- Editor de curvas (Aba Ajustes) ----------
+    // Constante: raio de acerto (em pixels de canvas) para selecionar um ponto.
+    var CURVE_HIT_RADIUS = 10;
+
+    // Amostra o histograma de luminancia do frame atual (throttle ~400ms).
+    // Desenha o canvas 3D reduzido para 128x128 num canvas 2D offscreen e usa
+    // LightRefCurves.binLuminance. Retorna array de 256 bins ou null em falha.
+    // CAVEAT (verificar no Photoshop): drawImage de um canvas WebGL so retorna
+    // pixels se o contexto foi criado com preserveDrawingBuffer (a cena usa
+    // preserveDrawingBuffer:true). Em contextos sem isso a imagem sai vazia; o
+    // histograma degrada graciosamente (fica em branco) e NUNCA lanca excecao.
+    function sampleHistogram() {
+        try {
+            if (!window.LightRefCurves || !LightRefCurves.binLuminance) return null;
+            var glCanvas = (scene && scene.canvas) || document.getElementById('gl-canvas');
+            if (!glCanvas) return null;
+            if (!_histoCanvas) {
+                _histoCanvas = document.createElement('canvas');
+                _histoCanvas.width = 128; _histoCanvas.height = 128;
+            }
+            var ctx = _histoCanvas.getContext('2d');
+            if (!ctx) return null;
+            ctx.clearRect(0, 0, 128, 128);
+            ctx.drawImage(glCanvas, 0, 0, 128, 128);
+            var data = ctx.getImageData(0, 0, 128, 128).data;
+            return LightRefCurves.binLuminance(data, 128, 128);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Garante um histograma recente no cache (recomputa no maximo a cada 400ms).
+    function refreshHistogram(force) {
+        var now = (window.Date && Date.now) ? Date.now() : (+new Date());
+        if (force || _histoBins === null || (now - _histoAt) > 400) {
+            _histoBins = sampleHistogram();
+            _histoAt = now;
+        }
+    }
+
+    // Monta o DOM do editor e liga toda a interacao (pointer + touch).
+    function buildCurveEditor() {
+        var host = $('.lr04-curves-host');
+        if (!host) return;
+        if (!window.LightRefCurves || !scene || !scene.postfx || !scene.postfx.getCurves) {
+            host.innerHTML = '';
+            return;
+        }
+        var lumLabel = _t('curveLum');
+        host.innerHTML =
+            '<div class="lr04-curves">' +
+            '<div class="lr04-heading">' + _t('curvesTitle') + '</div>' +
+            '<div class="lr04-curvetabs" role="tablist">' +
+            '<button type="button" data-curve="lum" aria-pressed="true" title="' + lumLabel + '">Lum</button>' +
+            '<button type="button" data-curve="r" aria-pressed="false">' + _t('curveR') + '</button>' +
+            '<button type="button" data-curve="g" aria-pressed="false">' + _t('curveG') + '</button>' +
+            '<button type="button" data-curve="b" aria-pressed="false">' + _t('curveB') + '</button>' +
+            '</div>' +
+            '<canvas class="lr04-curvecanvas" width="256" height="256" aria-label="' + _t('curvesTitle') + '"></canvas>' +
+            '<div class="lr04-curveaxes">' +
+            '<span class="lr04-curve-inlabel">' + _t('curveInput') + '</span>' +
+            '<span class="lr04-curve-outlabel">' + _t('curveOutput') + '</span>' +
+            '</div>' +
+            '<button type="button" class="lr04-widebutton" data-action="reset-curve">' + _t('curveReset') + '</button>' +
+            '</div>';
+
+        var canvas = $('.lr04-curvecanvas', host);
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var CW = 256, CH = 256;
+
+        // Pontos do canal ativo (lidos do PostFX).
+        var points = readChannelPoints(curveChannel);
+        // Estado do drag.
+        var dragging = false, dragIndex = -1;
+
+        // --- Mapeamento de coordenadas ---
+        // input x em [0,1] -> px = x*255 ; output y em [0,1] -> py = (1-y)*255.
+        function toPx(x) { return x * (CW - 1); }
+        function toPy(y) { return (1 - y) * (CH - 1); }
+        // Inverso para eventos: considera a escala CSS vs. atributo do canvas.
+        function eventToCurve(ev) {
+            var rect = canvas.getBoundingClientRect();
+            var cx, cy;
+            if (ev.touches && ev.touches.length) { cx = ev.touches[0].clientX; cy = ev.touches[0].clientY; }
+            else if (ev.changedTouches && ev.changedTouches.length) { cx = ev.changedTouches[0].clientX; cy = ev.changedTouches[0].clientY; }
+            else { cx = ev.clientX; cy = ev.clientY; }
+            var sx = rect.width ? (CW / rect.width) : 1;
+            var sy = rect.height ? (CH / rect.height) : 1;
+            var localX = (cx - rect.left) * sx;   // px no espaco do canvas (0..256)
+            var localY = (cy - rect.top) * sy;
+            return {
+                px: localX,
+                py: localY,
+                x: clamp01c(localX / (CW - 1)),
+                y: clamp01c(1 - (localY / (CH - 1))),
+                inside: (localX >= -16 && localX <= CW + 16 && localY >= -16 && localY <= CH + 16),
+                outOfBounds: (localX < -8 || localX > CW + 8 || localY < -8 || localY > CH + 8)
+            };
+        }
+        function clamp01c(v) { if (v < 0) return 0; if (v > 1) return 1; if (v !== v) return 0; return v; }
+
+        // Acerto: indice do ponto mais proximo dentro de CURVE_HIT_RADIUS (px de canvas).
+        function hitTest(px, py) {
+            var best = -1, bestD = CURVE_HIT_RADIUS * CURVE_HIT_RADIUS;
+            for (var i = 0; i < points.length; i++) {
+                var dx = px - toPx(points[i].x);
+                var dy = py - toPy(points[i].y);
+                var d = dx * dx + dy * dy;
+                if (d <= bestD) { bestD = d; best = i; }
+            }
+            return best;
+        }
+
+        // Cor da linha por canal (le bem no painel escuro).
+        function channelStroke() {
+            if (curveChannel === 'r') return '#ff6a7f';
+            if (curveChannel === 'g') return '#78e08f';
+            if (curveChannel === 'b') return '#6aa8ff';
+            return '#e8e8ea';
+        }
+
+        // Desenha: histograma (atras) -> grade -> curva -> pontos de controle.
+        function redrawCurve() {
+            ctx.clearRect(0, 0, CW, CH);
+            ctx.fillStyle = '#141b1d';
+            ctx.fillRect(0, 0, CW, CH);
+            // Histograma (semi-transparente, atras da grade).
+            if (_histoBins) {
+                var maxBin = 1;
+                for (var h = 0; h < _histoBins.length; h++) { if (_histoBins[h] > maxBin) maxBin = _histoBins[h]; }
+                ctx.fillStyle = 'rgba(170,176,183,0.22)';
+                for (var bx = 0; bx < 256; bx++) {
+                    var bh = Math.round((_histoBins[bx] / maxBin) * (CH - 1));
+                    if (bh > 0) ctx.fillRect(bx, CH - bh, 1, bh);
+                }
+            }
+            // Grade (quartos).
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            var q;
+            for (q = 1; q < 4; q++) {
+                var gx = Math.round(q * (CW - 1) / 4) + 0.5;
+                var gy = Math.round(q * (CH - 1) / 4) + 0.5;
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, CH); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CW, gy); ctx.stroke();
+            }
+            // Diagonal de referencia (identidade).
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.beginPath(); ctx.moveTo(0, CH - 1); ctx.lineTo(CW - 1, 0); ctx.stroke();
+            // Curva interpolada (via LUT de 256 valores).
+            var lut = LightRefCurves.buildLut256(points);
+            ctx.strokeStyle = channelStroke();
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for (var i = 0; i < 256; i++) {
+                var xx = (i / 255) * (CW - 1);
+                var yy = (1 - (lut[i] / 255)) * (CH - 1);
+                if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+            }
+            ctx.stroke();
+            // Pontos de controle (so do canal ativo).
+            ctx.fillStyle = channelStroke();
+            ctx.strokeStyle = '#141b1d';
+            ctx.lineWidth = 1;
+            for (var p2 = 0; p2 < points.length; p2++) {
+                ctx.beginPath();
+                ctx.arc(toPx(points[p2].x), toPy(points[p2].y), 3.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        // Re-encontra o indice de um ponto apos operacao que pode reordenar.
+        function indexNearestX(xval) {
+            var best = 0, bestD = Infinity;
+            for (var i = 0; i < points.length; i++) {
+                var d = Math.abs(points[i].x - xval);
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            return best;
+        }
+
+        // Grava o canal ativo no PostFX e redesenha.
+        function pushLive() {
+            try { scene.postfx.setCurve(curveChannel, points); } catch (e) {}
+            redrawCurve();
+        }
+
+        // --- Inicio de interacao (pointerdown / touchstart) ---
+        function onDown(ev) {
+            var c = eventToCurve(ev);
+            var idx = hitTest(c.px, c.py);
+            if (idx < 0) {
+                // Area vazia: adiciona um ponto e passa a arrasta-lo.
+                points = LightRefCurves.addPoint(points, c.x, c.y);
+                idx = indexNearestX(c.x);
+            }
+            dragging = true;
+            dragIndex = idx;
+            if (ev.preventDefault) ev.preventDefault();
+            pushLive();
+        }
+
+        // --- Movimento com drag (pointermove / touchmove) ---
+        function onMove(ev) {
+            if (!dragging || dragIndex < 0) return;
+            var c = eventToCurve(ev);
+            points = LightRefCurves.movePoint(points, dragIndex, c.x, c.y);
+            if (ev.preventDefault) ev.preventDefault();
+            pushLive();
+        }
+
+        // --- Fim de interacao (pointerup / touchend) ---
+        function onUp(ev) {
+            if (!dragging) return;
+            var wasIndex = dragIndex;
+            dragging = false;
+            dragIndex = -1;
+            // Arrastar um ponto INTERIOR para fora dos limites -> deletar.
+            if (wasIndex > 0 && wasIndex < points.length - 1) {
+                var c = eventToCurve(ev);
+                if (c.outOfBounds) {
+                    points = LightRefCurves.deletePoint(points, wasIndex);
+                }
+            }
+            try { scene.postfx.setCurve(curveChannel, points); } catch (e) {}
+            redrawCurve();
+            captureSession();
+        }
+
+        // --- Duplo clique em ponto interior -> deletar ---
+        function onDblClick(ev) {
+            var c = eventToCurve(ev);
+            var idx = hitTest(c.px, c.py);
+            if (idx > 0 && idx < points.length - 1) {
+                points = LightRefCurves.deletePoint(points, idx);
+                try { scene.postfx.setCurve(curveChannel, points); } catch (e) {}
+                redrawCurve();
+                captureSession();
+            }
+        }
+
+        // Liga eventos de ponteiro com fallback de toque.
+        if (window.PointerEvent) {
+            canvas.addEventListener('pointerdown', function (ev) {
+                try { canvas.setPointerCapture(ev.pointerId); } catch (e) {}
+                onDown(ev);
+            });
+            canvas.addEventListener('pointermove', onMove);
+            canvas.addEventListener('pointerup', onUp);
+            canvas.addEventListener('pointercancel', onUp);
+        } else {
+            canvas.addEventListener('mousedown', onDown);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            canvas.addEventListener('touchstart', onDown);
+            canvas.addEventListener('touchmove', onMove);
+            canvas.addEventListener('touchend', onUp);
+        }
+        canvas.addEventListener('dblclick', onDblClick);
+
+        // Troca de canal via tablist.
+        $all('.lr04-curvetabs button', host).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var ch = btn.getAttribute('data-curve');
+                if (ch !== 'lum' && ch !== 'r' && ch !== 'g' && ch !== 'b') return;
+                curveChannel = ch;
+                $all('.lr04-curvetabs button', host).forEach(function (b2) {
+                    b2.setAttribute('aria-pressed', b2.getAttribute('data-curve') === ch ? 'true' : 'false');
+                });
+                points = readChannelPoints(curveChannel);
+                refreshHistogram(true);
+                redrawCurve();
+            });
+        });
+
+        // Resetar apenas o canal ativo.
+        bindAction('reset-curve', function () {
+            try { scene.postfx.setCurve(curveChannel, [{ x: 0, y: 0 }, { x: 1, y: 1 }]); } catch (e) {}
+            points = readChannelPoints(curveChannel);
+            redrawCurve();
+            captureSession();
+        });
+
+        // Marca o canal ativo e desenha pela primeira vez.
+        $all('.lr04-curvetabs button', host).forEach(function (b3) {
+            b3.setAttribute('aria-pressed', b3.getAttribute('data-curve') === curveChannel ? 'true' : 'false');
+        });
+        refreshHistogram(true);
+        redrawCurve();
+    }
+
+    // Le os pontos de controle de um canal a partir do PostFX (copia defensiva).
+    function readChannelPoints(channel) {
+        try {
+            var all = scene.postfx.getCurves();
+            var arr = all && all[channel];
+            if (arr && arr.length >= 2) {
+                var out = [];
+                for (var i = 0; i < arr.length; i++) { out.push({ x: arr[i].x, y: arr[i].y }); }
+                return out;
+            }
+        } catch (e) {}
+        return [{ x: 0, y: 0 }, { x: 1, y: 1 }];
     }
     // Reflete o estado dos filtros nos botoes do visor + quicksliders.
     function syncFilterButtons() {
@@ -1283,6 +1675,7 @@
             case 'sl-specular': scene.setMaterialParam('specular', v); break;
             case 'sl-reflection': scene.setMaterialParam('reflection', v); break;
             case 'sl-subsurface': scene.setMaterialParam('subsurface', v); break;
+            case 'sl-surface-smooth': scene.setMaterialParam('surfaceSmooth', v); break;
             case 'sl-intensity': scene.lightManager.update(selectedLightId,'intensity', v); break;
             case 'sl-azimuth': scene.lightManager.update(selectedLightId,'azimuth', parseInt(value,10)); break;
             case 'sl-elevation': scene.lightManager.update(selectedLightId,'elevation', parseInt(value,10)); break;
@@ -2019,7 +2412,7 @@
     // Coleta o Estado_Completo a partir de 'sc' (objeto scene). 'modelValue' e o
     // valor do #model-select (modelo carregado atual); pode ser null.
     function collectSceneState(sc, modelValue) {
-        var lights = sc.lightManager.lights.map(function (l){ return {name:l.name,color:l.color,intensity:l.intensity,azimuth:l.azimuth,elevation:l.elevation,enabled:l.enabled,softness:l.softness,sourceSize:l.sourceSize}; });
+        var lights = sc.lightManager.lights.map(function (l){ return sc.lightManager.toDescriptor ? sc.lightManager.toDescriptor(l) : {name:l.name,color:l.color,intensity:l.intensity,azimuth:l.azimuth,elevation:l.elevation,enabled:l.enabled,softness:l.softness,sourceSize:l.sourceSize}; });
         var matParams = sc.getMaterialParams ? sc.getMaterialParams() : null;
         var mp = {}; if (matParams) { for (var k in matParams) if (matParams.hasOwnProperty(k)) mp[k] = matParams[k]; }
         return {
@@ -2029,6 +2422,7 @@
             offset: sc.getModelOffset ? sc.getModelOffset() : null,
             scaleMult: sc.getModelScaleMult ? sc.getModelScaleMult() : null,
             background: sc.getBackground ? sc.getBackground() : null,
+            atmosphere: sc.getAtmosphere ? sc.getAtmosphere() : null,
             lights: lights,
             fx: sc.postfx.getParams(),
             focal: sc.getFocalLength ? sc.getFocalLength() : null,
@@ -2049,7 +2443,7 @@
     //   onModelValue(url)             - reflete o modelo carregado na UI (#model-select).
     //   onBackground(state)           - efeito de UI extra para o fundo (classe transparent).
     //   feedback(msg, isErr)          - feedback ao usuario.
-    //   afterApply()                  - hook pos-aplicacao (selectLight/syncMaterialPopover/renderTab).
+    //   afterApply()                  - hook pos-aplicacao (selectLight/syncMaterialPanel/renderTab).
     function applySceneState(sc, state, opts) {
         if (!state) return;
         opts = opts || {};
@@ -2079,6 +2473,7 @@
             if (state.focal != null && sc.setFocalLength) sc.setFocalLength(state.focal);
             if (sc.setEnvironment) sc.setEnvironment(state.environment || null);
             if (state.envIntensity != null && sc.setEnvIntensity) sc.setEnvIntensity(state.envIntensity);
+            if (sc.setAtmosphere) sc.setAtmosphere(state.atmosphere || {skyColor:sc.getBackground().color,groundColor:'#9e9ea3'});
             if (state.lights != null) {
                 var ex = sc.lightManager.lights.slice(); ex.forEach(function(l){ sc.lightManager.remove(l.id); });
                 state.lights.forEach(function(ld){ sc.lightManager.add(ld); });
@@ -2196,12 +2591,13 @@
             offset: _cleanVec3(rawScene.offset, iniScene.offset, ['x', 'y', 'z']),
             scaleMult: _pickNum(rawScene.scaleMult, iniScene.scaleMult),
             background: _cleanBackground(rawScene.background, iniScene.background),
+            atmosphere: window.LightRefAtmosphere ? LightRefAtmosphere.clean(rawScene.atmosphere, {skyColor:(rawScene.background||{}).color}) : null,
             lights: _cleanLights(rawScene.lights, iniScene.lights),
-            fx: _cleanObjNums(rawScene.fx, iniScene.fx),
+            fx: _cleanFx(rawScene.fx, iniScene.fx),
             focal: _pickNum(rawScene.focal, iniScene.focal),
             projection: _pickStr(rawScene.projection, iniScene.projection),
             material: _pickStr(rawScene.material, iniScene.material),
-            materialParams: _cleanObjNums(rawScene.materialParams, iniScene.materialParams),
+            materialParams: _cleanMaterialParams(rawScene.materialParams, iniScene.materialParams),
             formColor: _pickStrOrNull(rawScene.formColor, (iniScene.formColor != null ? iniScene.formColor : null)),
             environment: _pickStrOrNull(rawScene.environment, (iniScene.environment != null ? iniScene.environment : null)),
             envIntensity: _pickNum(rawScene.envIntensity, iniScene.envIntensity)
@@ -2263,6 +2659,27 @@
             color: _pickStr(src.color, (fb.color != null ? fb.color : '#3a4a6a'))
         };
     }
+    function _cleanMaterialParams(v, fb) {
+        var out = _cleanObjNums(v, fb);
+        ['scatter','lineColor'].forEach(function (key) {
+            var value = v && v[key], fallback = fb && fb[key];
+            if (typeof value === 'string' && /^#[a-f\d]{6}$/i.test(value)) out[key] = value;
+            else if (typeof fallback === 'string' && /^#[a-f\d]{6}$/i.test(fallback)) out[key] = fallback;
+            else delete out[key];
+        });
+        return out;
+    }
+    function _cleanFx(v, fb) {
+        var out = _cleanObjNums(v, fb);
+        if (window.LightRefCurves) {
+            var curves = (v && v.curves) || (fb && fb.curves) || {};
+            out.curves = {};
+            ['lum','r','g','b'].forEach(function (channel) {
+                out.curves[channel] = LightRefCurves.sanitizePoints(curves[channel]);
+            });
+        }
+        return out;
+    }
     function _cleanObjNums(v, fb) {
         var out = {};
         var base = (fb && typeof fb === 'object' && !_isArr(fb)) ? fb : {};
@@ -2284,7 +2701,7 @@
             var out = [];
             for (var i = 0; i < v.length; i++) {
                 var l = v[i]; if (!l || typeof l !== 'object' || _isArr(l)) continue;
-                out.push({
+                out.push(window.LightRefLightTypes ? LightRefLightTypes.normalize(l) : {
                     name: _pickStr(l.name, ''),
                     color: _pickStr(l.color, '#f4f4f2'),
                     intensity: _pickNum(l.intensity, 1),
@@ -2315,7 +2732,7 @@
             feedback: feedback,
             afterApply: function () {
                 selectLight(scene.lightManager.lights.length ? scene.lightManager.lights[0].id : null);
-                syncMaterialPopover();
+                syncMaterialPanel();
                 renderTab();
                 captureSession();
             }

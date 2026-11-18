@@ -11,7 +11,9 @@
     var strings = {
         pt: {
             /* --- Tabs --- */
+            tabMaterial: 'Material',
             tabLight: 'Luz',
+            tabAtmosphere: 'Ambiente',
             tabLens: 'Lente',
             tabAdjust: 'Ajustes',
             tabPosition: 'Posicao',
@@ -61,6 +63,15 @@
             checkPosterize: 'Posterizar',
             checkCutout: 'Cutout',
             checkGray: 'Preto e branco',
+            /* --- Curves editor (adjust) --- */
+            curvesTitle: 'Curvas',
+            curveLum: 'Luminancia',
+            curveR: 'R',
+            curveG: 'G',
+            curveB: 'B',
+            curveReset: 'Resetar curva',
+            curveInput: 'Entrada',
+            curveOutput: 'Saida',
             /* --- Position tab --- */
             posRotateY: 'Girar Y',
             posTiltX: 'Inclinar X',
@@ -175,7 +186,9 @@
         },
         en: {
             /* --- Tabs --- */
+            tabMaterial: 'Material',
             tabLight: 'Light',
+            tabAtmosphere: 'Environment',
             tabLens: 'Lens',
             tabAdjust: 'Adjust',
             tabPosition: 'Position',
@@ -225,6 +238,15 @@
             checkPosterize: 'Posterize',
             checkCutout: 'Cutout',
             checkGray: 'Black and white',
+            /* --- Curves editor (adjust) --- */
+            curvesTitle: 'Curves',
+            curveLum: 'Luminance',
+            curveR: 'R',
+            curveG: 'G',
+            curveB: 'B',
+            curveReset: 'Reset curve',
+            curveInput: 'Input',
+            curveOutput: 'Output',
             /* --- Position tab --- */
             posRotateY: 'Rotate Y',
             posTiltX: 'Tilt X',

@@ -1,19 +1,14 @@
-﻿# LightRef v0.4.0
+# Alterações
 
-Referencia de iluminacao 3D para Adobe Photoshop (plugin CEP).
+## 1.0.0 — 2026-11-18
 
-## Novidades
-- Motor grafico migrado para Babylon.js: PBR completo e subsurface real.
-- Nova biblioteca de modelos (bustos, torsos, esculturas, cabecas).
-- Mapas de ambiente (HDR): iluminacao e fundo panoramico com 10 cenarios.
-- Aba Posicao com gizmo de mover/rotacionar e ajuste por sliders.
-- Ajustes de imagem (exposicao, contraste, temperatura, saturacao, P&B, posterizar, cutout).
-- Export em 2K recortado no modelo, com fundo transparente.
-- Sistema de atualizacao automatico (aviso de nova versao ao abrir).
-
-## Instalacao
-1. Baixe o LightRef_Setup.exe abaixo.
-2. Execute e clique em Instalar.
-3. Abra o Photoshop e va em Janela > Extensoes > LightRef.
-
-Requer Photoshop 2022 ou superior.
+- Promove a versão artística ao LightRef oficial, mantendo os IDs CEP e a pasta de dados anteriores.
+- Acrescenta tipos de luz, feixes, visibilidade sem exclusão e controles unificados.
+- Reúne material, Cel + Line Art, suavização e cristal em uma aba dedicada.
+- Acrescenta absorção por distância no volume, reflexos brancos, refração sólida e cáustica artística aproximada.
+- Move HDR para Ambiente e acrescenta cores de céu/chão e bases de horários.
+- Integra Curvas aos ajustes, divisória redimensionável e duas colunas responsivas.
+- Evita o piso encobrir a malha e descarta carregamentos antigos antes de substituir o modelo atual.
+- Adota instalação com verificação SHA256, backup e restauração em falhas.
+- Renova o instalador com identidade Xuimart, Photoshops detectados, localização manual, detalhes recolhíveis e telas de progresso, conclusão e erro.
+- Restaura o atualizador oficial e acrescenta o manifesto da release como canal redundante.

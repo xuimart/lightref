@@ -99,13 +99,13 @@ function lightrefPlaceRenderWithAdjustments(pngPath, fxJson) {
 
         // 2. Cria as camadas de ajuste conforme os efeitos ativos.
         //    Usamos Action Manager para os tipos que o DOM nao expoe diretamente.
-        if (fx.exposure && Math.abs(fx.exposure) > 0.001) _lrAddExposure(fx.exposure);
-        if (fx.contrast && Math.abs(fx.contrast) > 0.001) _lrAddBrightnessContrast(Math.round(fx.contrast * 50));
+        if (fx.exposure && Math.abs(fx.exposure) > 0.001) _lrArtAddExposure(fx.exposure);
+        if (fx.contrast && Math.abs(fx.contrast) > 0.001) _lrArtAddBrightnessContrast(Math.round(fx.contrast * 50));
         if (fx.saturation !== undefined && Math.abs(fx.saturation - 1) > 0.001) {
-            _lrAddHueSaturation(Math.round((fx.saturation - 1) * 100));
+            _lrArtAddHueSaturation(Math.round((fx.saturation - 1) * 100));
         }
-        if (fx.blackWhite === 1) _lrAddBlackAndWhite();
-        if (fx.posterizeOn === 1) _lrAddPosterize(fx.posterizeLevels || 6);
+        if (fx.blackWhite === 1) _lrArtAddBlackAndWhite();
+        if (fx.posterizeOn === 1) _lrArtAddPosterize(fx.posterizeLevels || 6);
 
         return "OK";
     } catch (e) {
@@ -120,7 +120,7 @@ function _lightrefParseJSON(s) {
 }
 
 // ----- Camadas de ajuste via Action Manager -----
-function _lrAddExposure(ev) {
+function _lrArtAddExposure(ev) {
     var d = new ActionDescriptor();
     var ref = new ActionReference();
     ref.putClass(stringIDToTypeID("adjustmentLayer"));
@@ -134,7 +134,7 @@ function _lrAddExposure(ev) {
     d.putObject(charIDToTypeID("Usng"), stringIDToTypeID("adjustmentLayer"), type);
     executeAction(charIDToTypeID("Mk  "), d, DialogModes.NO);
 }
-function _lrAddBrightnessContrast(contrast) {
+function _lrArtAddBrightnessContrast(contrast) {
     var d = new ActionDescriptor();
     var ref = new ActionReference();
     ref.putClass(stringIDToTypeID("adjustmentLayer"));
@@ -147,7 +147,7 @@ function _lrAddBrightnessContrast(contrast) {
     d.putObject(charIDToTypeID("Usng"), stringIDToTypeID("adjustmentLayer"), type);
     executeAction(charIDToTypeID("Mk  "), d, DialogModes.NO);
 }
-function _lrAddHueSaturation(saturation) {
+function _lrArtAddHueSaturation(saturation) {
     var d = new ActionDescriptor();
     var ref = new ActionReference();
     ref.putClass(stringIDToTypeID("adjustmentLayer"));
@@ -166,7 +166,7 @@ function _lrAddHueSaturation(saturation) {
     d.putObject(charIDToTypeID("Usng"), stringIDToTypeID("adjustmentLayer"), type);
     executeAction(charIDToTypeID("Mk  "), d, DialogModes.NO);
 }
-function _lrAddBlackAndWhite() {
+function _lrArtAddBlackAndWhite() {
     var d = new ActionDescriptor();
     var ref = new ActionReference();
     ref.putClass(stringIDToTypeID("adjustmentLayer"));
@@ -177,7 +177,7 @@ function _lrAddBlackAndWhite() {
     d.putObject(charIDToTypeID("Usng"), stringIDToTypeID("adjustmentLayer"), type);
     executeAction(charIDToTypeID("Mk  "), d, DialogModes.NO);
 }
-function _lrAddPosterize(levels) {
+function _lrArtAddPosterize(levels) {
     var d = new ActionDescriptor();
     var ref = new ActionReference();
     ref.putClass(stringIDToTypeID("adjustmentLayer"));

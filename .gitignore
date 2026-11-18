@@ -35,3 +35,13 @@ com.lightref.cep/index.css.bak
 com.lightref.cep/index.html.bak
 build_*/**/*.zip
 build_*/**/*.exe
+
+# Release 1.0 tooling and generated artifacts
+dist/
+qa/*
+!qa/README.md
+com.lightref.cep/qa/*
+!com.lightref.cep/qa/fixture.html
+!com.lightref.cep/qa/bootstrap-ui.js
+!/package.json
+!/package-lock.json

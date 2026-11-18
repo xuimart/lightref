@@ -1,0 +1,6 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#222}canvas{width:600px;height:600px;display:block}</style></head><body><canvas id="canvas" width="600" height="600"></canvas>
+<script>window.LightRefStorage={readConfig:function(){return {}},writeConfig:function(){}};window.__artErrors=[];window.addEventListener('error',function(e){__artErrors.push(e.message)});</script>
+<script src="../js/vendor/babylon.js"></script><script src="../js/vendor/babylonjs.loaders.min.js"></script><script src="../js/lights.js"></script><script src="../js/light-types.js"></script><script src="../js/curves.js"></script><script src="../js/postfx.js"></script><script src="../js/scene.js"></script><script src="../js/surface-quality.js"></script><script src="../js/art-shaders.js"></script><script src="../js/art-engine.js"></script><script src="../js/atmosphere.js"></script>
+<script>
+window.fixture={loaded:false,error:null};try{var sc=new LightRefScene(document.getElementById('canvas'));sc.init();window.testScene=sc;sc.lightManager.add({name:'Principal',intensity:3,azimuth:215,elevation:30});sc.lightManager.setHelpersVisible(false);sc.loadOBJ('models/asaro.obj',null,function(err){if(err)fixture.error=String(err);else{sc.setModelRotation(180,0,0);fixture.loaded=true;}});}catch(e){fixture.error=e.stack||e.message;}
+</script></body></html>

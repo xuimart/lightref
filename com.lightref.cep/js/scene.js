@@ -340,12 +340,15 @@
         if (!s) return;
         var c = this.camera;
         if (!c) return;
-        if (isFinite(s.alpha)) c.alpha = s.alpha;
-        if (isFinite(s.beta)) c.beta = s.beta;
-        if (isFinite(s.radius)) c.radius = s.radius;
         if (s.target && isFinite(s.target.x) && isFinite(s.target.y) && isFinite(s.target.z)) {
             c.setTarget(new BABYLON.Vector3(s.target.x, s.target.y, s.target.z));
         }
+        // setTarget recomputes spherical coordinates: restore them afterwards.
+        if (isFinite(s.alpha)) c.alpha = s.alpha;
+        if (isFinite(s.beta)) c.beta = s.beta;
+        if (isFinite(s.radius)) c.radius = s.radius;
+        c.inertialAlphaOffset = c.inertialBetaOffset = c.inertialRadiusOffset = 0;
+        c.inertialPanningX = c.inertialPanningY = 0;
     };
 
     // ---------- Pausa do render loop com o painel oculto ----------
@@ -368,11 +371,11 @@
     // Cada preset define os parametros PBR de partida. O usuario pode ajustar via
     // setMaterialParam (sliders estilo FormBox: roughness, metalness, specular,
     // reflection, subsurface, scatter). subsurface usa translucency REAL do Babylon.
-    Scene.MATERIALS = ['clay','skin','marble','jade','gold','copper','bronze','metal','pearl','white'];
+    Scene.MATERIALS = ['clay','skin','marble','jade','gold','copper','bronze','metal','pearl','white','cel','glass','diamond','emerald','ruby'];
     Scene.MATERIAL_BASE_COLOR = {
         clay:'#c9c4bd', skin:'#e8b89a', marble:'#e8e6e0', jade:'#4fb286',
         gold:'#d4af37', copper:'#b87333', bronze:'#8c6a3f', metal:'#bfc3c7',
-        pearl:'#f3ece2', white:'#f0efec'
+        pearl:'#f3ece2', white:'#f0efec', cel:'#e1c49d', glass:'#e5f4ff', diamond:'#f5f8ff', emerald:'#32b66a', ruby:'#df1522'
     };
     // Parametros PBR por preset: roughness, metalness, specular(0..1), reflection(env 0..2),
     // subsurface(0..1 translucencia), scatter(cor da luz que penetra).
@@ -386,13 +389,17 @@
         bronze:  { roughness:0.45, metalness:1.0, specular:0.8, reflection:1.0, subsurface:0.0, scatter:'#000000' },
         metal:   { roughness:0.25, metalness:0.9, specular:0.9, reflection:1.2, subsurface:0.0, scatter:'#000000' },
         pearl:   { roughness:0.25, metalness:0.1, specular:0.7, reflection:1.0, subsurface:0.3, scatter:'#f0e6da' },
-        white:   { roughness:0.9, metalness:0.0, specular:0.2, reflection:0.1, subsurface:0.0, scatter:'#000000' }
+        white:   { roughness:0.9, metalness:0.0, specular:0.2, reflection:0.1, subsurface:0.0, scatter:'#000000' },
+        cel:     { roughness:1, metalness:0, specular:0, reflection:0, subsurface:0, scatter:'#000000', celBands:3, celThreshold:.5, celSoftness:.035, celShadow:.25, lineEnabled:1, lineWidth:1.25, lineDetail:.5, lineColor:'#16151c' },
+        glass:   { roughness:.05, metalness:0, specular:.8, reflection:1, subsurface:0, scatter:'#000000', transparency:1, ior:1.5, thickness:.35, absorption:.3, dispersion:0, caustics:1 },
+        diamond: { roughness:.015, metalness:0, specular:1, reflection:1.35, subsurface:0, scatter:'#000000', transparency:1, ior:2.42, thickness:.55, absorption:.12, dispersion:.6, caustics:1 },
+        emerald: { roughness:.08, metalness:0, specular:.85, reflection:1.1, subsurface:0, scatter:'#000000', transparency:1, ior:1.58, thickness:.7, absorption:1.8, dispersion:.04, caustics:1 },
+        ruby:    { roughness:.025, metalness:0, specular:.95, reflection:1.2, subsurface:0, scatter:'#000000', transparency:1, ior:1.77, thickness:.65, absorption:1.8, dispersion:.08, caustics:1 }
     };
 
     Scene.prototype._defaultParams = function (type) {
         var p = Scene.MATERIAL_PRESETS[type] || Scene.MATERIAL_PRESETS.clay;
-        return { roughness:p.roughness, metalness:p.metalness, specular:p.specular,
-                 reflection:p.reflection, subsurface:p.subsurface, scatter:p.scatter };
+        var out = {transparency:0,ior:1.5,thickness:.35,absorption:1,dispersion:0,solidRefraction:1,exportBackground:0,caustics:0}; Object.keys(p).forEach(function (key) { out[key] = p[key]; }); return out;
     };
 
     // Garante um unico PBRMaterial persistente e o aplica em todas as meshes.
@@ -406,9 +413,10 @@
             this._material.maxSimultaneousLights = 10;
         }
         if (this.modelRoot) {
+            var visibleMaterial = this.artEngine && this.artEngine.mode === 'art' ? this.artEngine.surface : this._material;
             var meshes = this.modelRoot.getChildMeshes ? this.modelRoot.getChildMeshes() : [];
             for (var i = 0; i < meshes.length; i++) {
-                if (meshes[i].material !== this._material) meshes[i].material = this._material;
+                if (meshes[i].material !== visibleMaterial) meshes[i].material = visibleMaterial;
             }
         }
         return this._material;
@@ -427,8 +435,19 @@
         m.metallicF0Factor = pr.specular;
         m.environmentIntensity = pr.reflection;
 
-        m.subSurface.isRefractionEnabled = false;
-        m.alpha = 1.0; m.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+        var transmission = Math.max(0,Math.min(1,Number(pr.transparency)||0));
+        m.subSurface.isRefractionEnabled = transmission > .001;
+        m.alpha = transmission > .001 ? 1-transmission*.95 : 1;
+        m.transparencyMode = transmission > .001 ? BABYLON.Material.MATERIAL_ALPHABLEND : BABYLON.Material.MATERIAL_OPAQUE;
+        m.subSurface.linkRefractionWithTransparency = transmission > .001;
+        m.subSurface.refractionIntensity = transmission;
+        m.indexOfRefraction = Math.max(1,Math.min(2.6,Number(pr.ior)||1.5));
+        m.subSurface.indexOfRefraction = m.indexOfRefraction;
+        m.subSurface.minimumThickness = Math.max(.01,Number(pr.thickness)||.35);
+        m.subSurface.maximumThickness = m.subSurface.minimumThickness;
+        m.subSurface.tintColor = transmission > .001 ? color : hexToColor3('#ffffff');
+        m.subSurface.tintColorAtDistance = 1/Math.max(.05,Number(pr.absorption)||.05);
+        if(transmission>.001)m.subSurface.refractionTexture = this.artEngine ? this.artEngine.refractionTarget : this.scene.environmentTexture;
 
         var hasSSS = pr.subsurface > 0.001;
         m.subSurface.isTranslucencyEnabled = hasSSS;
@@ -485,6 +504,7 @@
     // ---------- Carregar modelo ----------
     Scene.prototype.loadOBJ = function (url, onProgress, onDone) {
         var self = this;
+        var request = this._modelLoadRequest = (this._modelLoadRequest || 0) + 1;
         var lower = String(url).toLowerCase().split('?')[0];
         var ext = /\.glb$/.test(lower) ? '.glb' : (/\.gltf$/.test(lower) ? '.gltf' : (/\.stl$/.test(lower) ? '.stl' : '.obj'));
         // Resolve para URL absoluta encodada (robusto a pastas com espacos).
@@ -495,10 +515,16 @@
 
         this._currentLoadUrl = url;
         BABYLON.SceneLoader.ImportMesh('', rootUrl, fileName, this.scene, function (meshes) {
+            if (request !== self._modelLoadRequest) {
+                meshes.forEach(function (mesh) { if (!mesh.isDisposed()) mesh.dispose(false, false); });
+                return;
+            }
+            self._currentLoadUrl = url;
             self._installModel(meshes, onDone);
         }, function (evt) {
-            if (onProgress && evt.lengthComputable) onProgress(Math.round((evt.loaded / evt.total) * 100));
+            if (request === self._modelLoadRequest && onProgress && evt.lengthComputable) onProgress(Math.round((evt.loaded / evt.total) * 100));
         }, function (scene, msg, ex) {
+            if (request !== self._modelLoadRequest) return;
             // Inclui a excecao original (ajuda a diagnosticar CEF antigo).
             var m = msg || (ex && ex.message) || 'Falha ao carregar o modelo';
             if (ex && ex.message && String(m).indexOf(ex.message) < 0) m += ' | ' + ex.message;
@@ -507,7 +533,12 @@
     };
 
     Scene.prototype._installModel = function (meshes, onDone) {
-        if (this.modelRoot) { this.modelRoot.dispose(false, true); this.modelRoot = null; }
+        if (!meshes.some(function (mesh) { return mesh.getTotalVertices && mesh.getTotalVertices() > 0; })) {
+            meshes.forEach(function (mesh) { if (!mesh.isDisposed()) mesh.dispose(false, false); });
+            if (onDone) onDone(new Error('O arquivo não contém uma malha visível.'));
+            return;
+        }
+        if (this.modelRoot) { this.modelRoot.dispose(false, false); this.modelRoot = null; }
         this.mannequin = null;
 
         // Agrupa tudo num TransformNode pivot para rotacionar/normalizar sem quebrar skin.
@@ -588,17 +619,19 @@
         var ground = this.ground, showGround = ground && ground.isEnabled();
         var markersHidden = [];
         // Esconde chao e marcadores/linhas das luzes.
-        if (ground) ground.setEnabled(false);
+        var withBackground = this.getMaterialParams().exportBackground === 1;
+        if (ground && !withBackground) ground.setEnabled(false);
         // Esconde o skybox e forca fundo transparente (export recortado sem fundo).
         var skyWasOn = this._skybox && this._skybox.isEnabled();
-        if (this._skybox) this._skybox.setEnabled(false);
+        if (this._skybox && !withBackground) this._skybox.setEnabled(false);
         var prevClear = this.scene.clearColor;
-        this.scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+        if (!withBackground) this.scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
         if (this.lightManager) {
             for (var i = 0; i < this.lightManager.lights.length; i++) {
                 var l = this.lightManager.lights[i];
                 if (l._marker && l._marker.isEnabled()) { l._marker.setEnabled(false); markersHidden.push(l._marker); }
                 if (l._line && l._line.isEnabled()) { l._line.setEnabled(false); markersHidden.push(l._line); }
+                if (l._shape && l._shape.isEnabled()) { l._shape.setEnabled(false); markersHidden.push(l._shape); }
             }
         }
         // Sobe a resolucao: dobra o tamanho do render temporariamente.
@@ -949,7 +982,7 @@
             var baseScale = 2 / maxDim;
             var groundY = (self.ground ? self.ground.position.y : -1.5);
             var obj = {
-                id:id, url:url, pivot:pivot, meshes:real, baseScale:baseScale,
+                id:id, url:url, pivot:pivot, meshes:real, baseScale:baseScale, minY:mn.y,
                 baseCenter:{ x:-ctr.x*baseScale, y:groundY - mn.y*baseScale, z:-ctr.z*baseScale },
                 offset:{ x:(self.sceneObjects.length+1)*1.1, y:0, z:0 },
                 scaleMult:1, sx:1, sy:1, sz:1, yaw:0, pitch:0, roll:0, hidden:false
@@ -990,7 +1023,7 @@
     Scene.prototype.removeSceneObject = function (id) {
         for (var i=0;i<this.sceneObjects.length;i++) {
             if (this.sceneObjects[i].id===id) {
-                this.sceneObjects[i].pivot.dispose(false, true);
+                this.sceneObjects[i].pivot.dispose(false, false);
                 this.sceneObjects.splice(i,1);
                 if (this._selectedObj===id) { this._selectedObj=null; if (this.setGizmoMode) this.setGizmoMode('off'); }
                 return;
@@ -998,7 +1031,7 @@
         }
     };
     Scene.prototype.clearSceneObjects = function () {
-        for (var i=0;i<this.sceneObjects.length;i++) this.sceneObjects[i].pivot.dispose(false, true);
+        for (var i=0;i<this.sceneObjects.length;i++) this.sceneObjects[i].pivot.dispose(false, false);
         this.sceneObjects = []; this._selectedObj = null;
     };
     Scene.prototype.isSceneObjectVisible = function (id) {

@@ -1,0 +1,1 @@
+precision highp float;attribute vec3 position;attribute vec3 normal;uniform mat4 worldViewProjection;uniform mat4 world;uniform mat4 view;uniform mat4 normalMatrix;varying float vLinDepth;varying vec3 vViewNormal;void main(){vLinDepth=(view*world*vec4(position,1.0)).z/30.0;vViewNormal=mat3(view)*mat3(normalMatrix)*normal;gl_Position=worldViewProjection*vec4(position,1.0);}

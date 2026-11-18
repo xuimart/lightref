@@ -23,10 +23,11 @@
     }
 
     // Versao compilada deste build. Bump a cada release (ver SISTEMA_DE_UPDATE).
-    var LIGHTREF_VERSION = '0.9.1';
+    var LIGHTREF_VERSION = '1.0.0';
 
     // Fonte da verdade para "existe versao nova?".
     var VERSION_URL = 'https://www.xuimart.com.br/lightref/version.json';
+    var RELEASE_VERSION_URL = 'https://github.com/xuimart/lightref/releases/latest/download/version.json';
     // Link permanente do instalador (nome fixo, sem versao).
     var FALLBACK_DOWNLOAD = 'https://github.com/xuimart/lightref/releases/latest/download/LightRef_Setup.exe';
 
@@ -44,28 +45,38 @@
 
     // GET simples. Usa o https do Node (CEP com --enable-nodejs); cai no fetch
     // do navegador se precisar. cb(err, dataObj).
-    function fetchJson(url, cb) {
+    function fetchJson(url, cb, redirects) {
+        redirects = redirects || 0;
+        var settled = false;
+        function done(err, info) { if (!settled) { settled = true; cb(err, info); } }
         // Cache-buster: proxies/CDN podem servir version.json em cache (A.6).
         var busted = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + (new Date()).getTime();
         try {
             var https = require('https');
             var req = https.get(busted, function (res) {
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    res.resume();
+                    if (redirects >= 4 || !/^https:\/\//i.test(res.headers.location)) { done(new Error('redirect')); return; }
+                    fetchJson(res.headers.location, done, redirects + 1); return;
+                }
+                if (res.statusCode !== 200) { res.resume(); done(new Error('HTTP ' + res.statusCode)); return; }
                 var body = '';
-                res.on('data', function (c) { body += c; });
+                res.on('data', function (c) { body += c; if (body.length > 131072) { done(new Error('response too large')); req.destroy(); } });
+                res.on('error', done);
                 res.on('end', function () {
-                    try { cb(null, JSON.parse(body)); }
-                    catch (e) { cb(e); }
+                    try { done(null, JSON.parse(body)); }
+                    catch (e) { done(e); }
                 });
             });
-            req.on('error', function (e) { cb(e); });
-            req.setTimeout(6000, function () { req.destroy(); cb(new Error('timeout')); });
+            req.on('error', done);
+            req.setTimeout(6000, function () { done(new Error('timeout')); req.destroy(); });
         } catch (eNode) {
             // Fallback: fetch (pode esbarrar em CSP, por isso https e o preferido).
             try {
-                global.fetch(busted).then(function (r) { return r.json(); })
-                    .then(function (j) { cb(null, j); })
-                    .catch(function (e) { cb(e); });
-            } catch (eFetch) { cb(eFetch); }
+                global.fetch(busted).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function (j) { done(null, j); })
+                    .catch(done);
+            } catch (eFetch) { done(eFetch); }
         }
     }
 
@@ -88,7 +99,7 @@
         wrap.id = 'lf-update-banner';
         var ver = info.version || '';
         var log = info.changelog || 'Nova versao disponivel.';
-        var url = info.downloadUrl || FALLBACK_DOWNLOAD;
+        var url = /^https:\/\/github\.com\/xuimart\/lightref\/releases\//.test(info.downloadUrl || '') ? info.downloadUrl : FALLBACK_DOWNLOAD;
         wrap.innerHTML =
             '<div class="lf-upd-row">' +
               '<strong>' + _t('updTitle', { versao: ver }) + '</strong>' +
@@ -106,7 +117,7 @@
 
     function showBanner(info) {
         try {
-            var host = global.document.getElementById('lightref') || global.document.body;
+            var host = global.document.getElementById('lr04') || global.document.body;
             var existing = global.document.getElementById('lf-update-banner');
             if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
             host.appendChild(buildBanner(info));
@@ -129,18 +140,20 @@
         decideUpdateOutcome: decideUpdateOutcome,
         // check(manual): se manual=true, avisa mesmo quando ja esta atualizado.
         check: function (manual) {
-            fetchJson(VERSION_URL, function (err, info) {
-                if (err || !info || !info.version) {
-                    if (manual && global.LightRefToast) global.LightRefToast(_t('updFail'));
-                    return;
-                }
-                var outcome = decideUpdateOutcome(info.version, LIGHTREF_VERSION, manual);
+            var pending = 2, newest = null;
+            function receive(err, info) {
+                if (!err && info && /^\d+\.\d+\.\d+$/.test(info.version) && (!newest || compareVersions(info.version, newest.version) > 0)) newest = info;
+                if (--pending) return;
+                if (!newest) { if (manual && global.LightRefToast) global.LightRefToast(_t('updFail')); return; }
+                var outcome = decideUpdateOutcome(newest.version, LIGHTREF_VERSION, manual);
                 if (outcome === 'banner') {
-                    showBanner(info);
+                    showBanner(newest);
                 } else if (outcome === 'current' && global.LightRefToast) {
                     global.LightRefToast(_t('updCurrent', { versao: LIGHTREF_VERSION }));
                 }
-            });
+            }
+            fetchJson(VERSION_URL, receive);
+            fetchJson(RELEASE_VERSION_URL, receive);
         }
     };
 

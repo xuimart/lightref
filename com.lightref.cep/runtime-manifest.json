@@ -1,0 +1,492 @@
+[
+    {
+        "path":  "CSXS/manifest.xml",
+        "bytes":  2319,
+        "sha256":  "0e7b88e97678ee23bef96400bfb1bb6526ac6c29b9b8ac4ab662ad72673feebd"
+    },
+    {
+        "path":  "env/charles-river.jpg",
+        "bytes":  614142,
+        "sha256":  "678413676e7d4320c092b48de9573cca716b3af0278e7d63c5e4581d46a04ce3"
+    },
+    {
+        "path":  "env/etnies-park.jpg",
+        "bytes":  325457,
+        "sha256":  "fd162033fb74292c479a38b5c228080956e72a9ca64d70f6e26ccaffc1b0fe0b"
+    },
+    {
+        "path":  "env/factory-catwalk.jpg",
+        "bytes":  490344,
+        "sha256":  "aef4ae493ad6f9f62a0b1d4f95b1195ec65ac8487679df3e6f095d63f2e8f210"
+    },
+    {
+        "path":  "env/frozen-waterfall.jpg",
+        "bytes":  527370,
+        "sha256":  "90e45164cae9c388430aa2d9eabc41ab8cb91700b1c2995bb17c18912e745441"
+    },
+    {
+        "path":  "env/grand-canyon.jpg",
+        "bytes":  431015,
+        "sha256":  "56dc72f3d09cc318f60e22dd6b7ac66e56d9730178493bf07051f415d2eedf54"
+    },
+    {
+        "path":  "env/la-downtown.jpg",
+        "bytes":  342544,
+        "sha256":  "cf5f89d911c499c94809db2e60baa95b69326e6bb0db6d46cf528a4ee4fe2fad"
+    },
+    {
+        "path":  "env/lobby-center.jpg",
+        "bytes":  456354,
+        "sha256":  "f20b969d0b7756fc2c2342f8b0d2920dba9a5580645eda59ff8cb26e6a647f06"
+    },
+    {
+        "path":  "env/milkyway.jpg",
+        "bytes":  280789,
+        "sha256":  "c44c341a8d94243748c8e64c85bc76aff9504e76b4959fc5beb603f8416cfe38"
+    },
+    {
+        "path":  "env/parking-lot.jpg",
+        "bytes":  260442,
+        "sha256":  "fa309403ac7121e7c90d0e607945cd54587af186f3369c64e87c8b1512045bcd"
+    },
+    {
+        "path":  "env/ueno-shrine.jpg",
+        "bytes":  419049,
+        "sha256":  "423f6a13ce7f05cacfee50a26811af1c2203caa4536e289b51e3dbdcb1c24977"
+    },
+    {
+        "path":  "icons/gen_placeholder_icons.ps1",
+        "bytes":  1498,
+        "sha256":  "1dbe9a50bd6337ef1c944721aa2bb6fd5a04560bf911ac4cc1243e374f8cbf82"
+    },
+    {
+        "path":  "icons/icon-dark-normal.png",
+        "bytes":  1042,
+        "sha256":  "89ae2286970cb42c52238be1925ab32f7bc508b089bc6b339a2a39dbace10fbb"
+    },
+    {
+        "path":  "icons/icon-dark-rollover.png",
+        "bytes":  1053,
+        "sha256":  "5c4b8b7157411bbc46f08692a3de0ba504c9c4a219a66e56a7892b01bcb8b5ff"
+    },
+    {
+        "path":  "icons/icon-normal.png",
+        "bytes":  1042,
+        "sha256":  "89ae2286970cb42c52238be1925ab32f7bc508b089bc6b339a2a39dbace10fbb"
+    },
+    {
+        "path":  "icons/icon-rollover.png",
+        "bytes":  1053,
+        "sha256":  "5c4b8b7157411bbc46f08692a3de0ba504c9c4a219a66e56a7892b01bcb8b5ff"
+    },
+    {
+        "path":  "img/logo_xuimart_branca.png",
+        "bytes":  15727,
+        "sha256":  "f92a2783406726dbc51ae91ce6c8dbf944342678e5a3f8bc4191c94d13abd5a9"
+    },
+    {
+        "path":  "img/xuim_bravo.png",
+        "bytes":  89110,
+        "sha256":  "cd23f6446d17d035ce4ecc3601664a41aace70d4f7a8af13990c66590bb66c67"
+    },
+    {
+        "path":  "img/xuim_falandoolhosfechados.png",
+        "bytes":  76428,
+        "sha256":  "e7e9a788b1a6b23a66cc079fc8bf7ed2832cac70450abad66a10f46d4b4ada07"
+    },
+    {
+        "path":  "img/xuim_falando_normal.png",
+        "bytes":  76073,
+        "sha256":  "a32bfcbc122a4850b3c6e513729e58a2af13b93600417cf0a371e200ae36cc89"
+    },
+    {
+        "path":  "img/xuim_pensando.png",
+        "bytes":  98934,
+        "sha256":  "31483eb91829de445a95e42173d92a686bb4d6cac4d321b5798c2eee211102bf"
+    },
+    {
+        "path":  "img/xuim_update.png",
+        "bytes":  7814,
+        "sha256":  "ac5c6ea80a4359d263bb51105c8c7681d39301a14aa86ddae8ca27937e803c5d"
+    },
+    {
+        "path":  "js/art-engine.js",
+        "bytes":  23551,
+        "sha256":  "76a1fc28d897c56a9e5c0efbda36a1e6cdc8f096629e76421e507b19a9538283"
+    },
+    {
+        "path":  "js/art-shaders.js",
+        "bytes":  55659,
+        "sha256":  "fe15dd20614032a5ad0d6464d110dff23a5c1a2fd330a0bf15735c7f0388024b"
+    },
+    {
+        "path":  "js/atmosphere.js",
+        "bytes":  6905,
+        "sha256":  "d0655e6b9f30f00d47d2d82c2bc7a89cf8a76af72a980132467494e902fc2dfa"
+    },
+    {
+        "path":  "js/CSInterface.js",
+        "bytes":  42759,
+        "sha256":  "d940cbc991553b4885d1b3b04d99c17f448041a738a12cc0b24ce688ace2d263"
+    },
+    {
+        "path":  "js/curves.js",
+        "bytes":  12878,
+        "sha256":  "d04e8f887850219b83820f8713e2ab45d9399b00c89c73c7b1e817c0b17dbc73"
+    },
+    {
+        "path":  "js/diag.js",
+        "bytes":  4299,
+        "sha256":  "9a532f8034e5cacb9683cd694dc08209c03d906928aa3a73207c30e39b388101"
+    },
+    {
+        "path":  "js/i18n.js",
+        "bytes":  16381,
+        "sha256":  "c45c81490afebee7b4bbb932912d0432461f68e8fdc0c7c6d58decaad35bd120"
+    },
+    {
+        "path":  "js/light-types.js",
+        "bytes":  12906,
+        "sha256":  "b1a0358174a63c8becb749ca17b5a304f2ae91a3a6f15988768cb55516e9ea77"
+    },
+    {
+        "path":  "js/lights.js",
+        "bytes":  10829,
+        "sha256":  "eb8a15a92e165a9815037500672a872b7fad0c09cbe950b57f9761524b949a57"
+    },
+    {
+        "path":  "js/mannequin.js",
+        "bytes":  12520,
+        "sha256":  "53995a68d1091b1a7ec1f680b278f18d8084e79589d12ae136b3c4abc2919aec"
+    },
+    {
+        "path":  "js/onboarding.js",
+        "bytes":  8566,
+        "sha256":  "f724fc61862ffb594507c401cddb1c04a4806d2749945c738093a945ea6ab671"
+    },
+    {
+        "path":  "js/panel.js",
+        "bytes":  164272,
+        "sha256":  "007b0f7513dafa6182d2da10254351fb30ab39ee351c4f410eaa6aa202991726"
+    },
+    {
+        "path":  "js/postfx.js",
+        "bytes":  12377,
+        "sha256":  "4d78d45334b0329379b987b1c6f8cdb4cf1dc2a947cb28c6835c4c618e1882d1"
+    },
+    {
+        "path":  "js/scene.js",
+        "bytes":  64853,
+        "sha256":  "ca75a0a0e1f19009f32892e3de2366953b1dcb83c114a6001291d3d7a18aa5b7"
+    },
+    {
+        "path":  "js/session.js",
+        "bytes":  9857,
+        "sha256":  "936b3279f468ededf39a2c7367b8c5bf59f177dff5b073fc46bbfb02ead6eb12"
+    },
+    {
+        "path":  "js/storage.js",
+        "bytes":  14321,
+        "sha256":  "bf916fd48f6033da2276e4d57c10ad73491b522ac2aed544b7443fdb77a6fae5"
+    },
+    {
+        "path":  "js/surface-quality.js",
+        "bytes":  3321,
+        "sha256":  "cd5727dbd95f6e0a31d149b74e1b34fdd76a470ec78b8578f4b46b605e85399f"
+    },
+    {
+        "path":  "js/to-photoshop.js",
+        "bytes":  5528,
+        "sha256":  "57af45d1e04ee48d019196e779870214b191f6ddef6b5c118b28633a9fdadd44"
+    },
+    {
+        "path":  "js/update.js",
+        "bytes":  7690,
+        "sha256":  "b96d7b8db1f98f9b83ff3dbb3a691298bac2fd16d1f204e248acf073520e4bb7"
+    },
+    {
+        "path":  "js/vendor-compat.js",
+        "bytes":  6797,
+        "sha256":  "58dab6052384cdacc8d0fbd0f2edd5e22daf7b46d13580fb64587128169546d1"
+    },
+    {
+        "path":  "js/vendor/babylon.js",
+        "bytes":  8592278,
+        "sha256":  "58ea8d8083a07c7bedeaec6e6f451e2c2f1fae6e8fe41b53679038daf267e363"
+    },
+    {
+        "path":  "js/vendor/babylonjs.loaders.min.js",
+        "bytes":  848056,
+        "sha256":  "813cb2d007ca796e5eaa0f17feb3b10e86b4600160c2140a600dc52412a2104c"
+    },
+    {
+        "path":  "js/vendor/lucide.min.js",
+        "bytes":  443953,
+        "sha256":  "38704b8390eecd97ef275e2f3eaa366fda48fa6d79049481ff2e9d434a27f29d"
+    },
+    {
+        "path":  "models/asaro.obj",
+        "bytes":  15889338,
+        "sha256":  "3204919175fde01611af79c3854d30980d82dab342e8c570852bbd3dcd820ccf"
+    },
+    {
+        "path":  "models/busto-mulher.obj",
+        "bytes":  23851106,
+        "sha256":  "c9c5189e7f5bd38145b1dd1e2f9700a2e4dfef86dd8bdf226bb905c367f16995"
+    },
+    {
+        "path":  "models/cabeca-anime.obj",
+        "bytes":  31447,
+        "sha256":  "4c77a5777b6ccb7631ca5acf25ed03466a97543ffb8c1ce70dc2134c64c441f7"
+    },
+    {
+        "path":  "models/cabeca-homem.obj",
+        "bytes":  6110579,
+        "sha256":  "33c1de90058f23d2adb5a21df3b12f747b9238663d192a706e4c47d1e6508716"
+    },
+    {
+        "path":  "models/cabeca-mulher-face.obj",
+        "bytes":  22676812,
+        "sha256":  "a96741b711dd8c39ef269298aeb452ad088bf09bc561075faf27622482718902"
+    },
+    {
+        "path":  "models/cabeca-mulher.obj",
+        "bytes":  5633308,
+        "sha256":  "fbcac13ec8be757723ae8d50f91b030ca343441238b35128559d31f92c4fb0bf"
+    },
+    {
+        "path":  "models/cabeca-semi-realista.obj",
+        "bytes":  59782928,
+        "sha256":  "61c63c155c21575b08d456549f05aa7181005a586160985cce014b11a538b637"
+    },
+    {
+        "path":  "models/ecorche.obj",
+        "bytes":  8214118,
+        "sha256":  "995d6a735823cbd3a894e2f7c98fe5d30906fb011d7c57ee3cfded79ce8a2a5f"
+    },
+    {
+        "path":  "models/forma-cilindro.obj",
+        "bytes":  49898,
+        "sha256":  "0d9effff37afe6a6de4a147fa4389e2a9cf75fe04ac3127538af61e9668efd3d"
+    },
+    {
+        "path":  "models/forma-cone-facetado.obj",
+        "bytes":  1127,
+        "sha256":  "6289a9902e14f75c856202c9858935b327d27682a50fffcc3f8afec0bad697b8"
+    },
+    {
+        "path":  "models/forma-cone.obj",
+        "bytes":  58690,
+        "sha256":  "97866179daea932e22ef3a9a1cf968aaa64040cc32e65234b726972194f1ab1a"
+    },
+    {
+        "path":  "models/forma-cubo.obj",
+        "bytes":  907,
+        "sha256":  "8222598916025db277c92476c52608994018b693b3ae84a3fcbd0c302333062e"
+    },
+    {
+        "path":  "models/forma-esfera.obj",
+        "bytes":  4673658,
+        "sha256":  "181433e73cf8f815de5ae9fa9c22d26965f55312f54aeea2cefe85350565aaae"
+    },
+    {
+        "path":  "models/furry.stl",
+        "bytes":  13481684,
+        "sha256":  "e30d3a3b0c4bf599225ffce82101c3257fd1da5e9e95baf36e731bfdd932a9ff"
+    },
+    {
+        "path":  "models/homem-romano.obj",
+        "bytes":  10403113,
+        "sha256":  "6ef6cff323bc9a8341ef1366d5734217164ea9f97aa7ee3a67603d657766acee"
+    },
+    {
+        "path":  "models/mulher-romana.obj",
+        "bytes":  10336292,
+        "sha256":  "b7cc823feddedc17ab0ae7b2ad3fc0f6c824a99d23e49556f6236c8890bf937a"
+    },
+    {
+        "path":  "models/tecido-mulher.obj",
+        "bytes":  10437662,
+        "sha256":  "728121a2e173b1ea21979fa23cd46986e88ce7b8678658bdf7f9a3325a51d556"
+    },
+    {
+        "path":  "models/torso-masculino.obj",
+        "bytes":  10361275,
+        "sha256":  "7100ab66ed838ec2b65d35230a81bd26b18fae1bd672cb7f5ee0bf251f131046"
+    },
+    {
+        "path":  "models/torso-mulher.obj",
+        "bytes":  9678647,
+        "sha256":  "6d3a86e1aa3142997a877cdbc3d80872f103e37f2d7567e35b717ba869c11fd6"
+    },
+    {
+        "path":  "models/formas basicas/cilindro.obj",
+        "bytes":  49898,
+        "sha256":  "0d9effff37afe6a6de4a147fa4389e2a9cf75fe04ac3127538af61e9668efd3d"
+    },
+    {
+        "path":  "models/formas basicas/cone faces.obj",
+        "bytes":  1127,
+        "sha256":  "6289a9902e14f75c856202c9858935b327d27682a50fffcc3f8afec0bad697b8"
+    },
+    {
+        "path":  "models/formas basicas/cone.obj",
+        "bytes":  58690,
+        "sha256":  "97866179daea932e22ef3a9a1cf968aaa64040cc32e65234b726972194f1ab1a"
+    },
+    {
+        "path":  "models/formas basicas/cubo.obj",
+        "bytes":  907,
+        "sha256":  "8222598916025db277c92476c52608994018b693b3ae84a3fcbd0c302333062e"
+    },
+    {
+        "path":  "models/formas basicas/esfera.obj",
+        "bytes":  4673658,
+        "sha256":  "181433e73cf8f815de5ae9fa9c22d26965f55312f54aeea2cefe85350565aaae"
+    },
+    {
+        "path":  "models/thumbs/asaro.png",
+        "bytes":  164640,
+        "sha256":  "00d4dbb4230ab6367f2e17a71328010ae09dacc6c02472b6d9601389a2c1e385"
+    },
+    {
+        "path":  "models/thumbs/busto-mulher.png",
+        "bytes":  176845,
+        "sha256":  "5a98a7943073616a0f5d045132bd25d7bb8068ce54bac6b2221b54630e5bac90"
+    },
+    {
+        "path":  "models/thumbs/cabeca-anime.png",
+        "bytes":  35533,
+        "sha256":  "f730a5eba2fba74923c5b289b2c34692310ae123908f54f36542ca8d3abbb29e"
+    },
+    {
+        "path":  "models/thumbs/cabeca-homem.png",
+        "bytes":  223968,
+        "sha256":  "592a736840dcbae3c854a03b2be7f007bc0289cda498f3199f8879ddd978985a"
+    },
+    {
+        "path":  "models/thumbs/cabeca-mulher-face.png",
+        "bytes":  194267,
+        "sha256":  "2438921ee1197059dbdcdaf2ab5b8192cefbf74fb627bfbe5889baa446b9805c"
+    },
+    {
+        "path":  "models/thumbs/cabeca-mulher.png",
+        "bytes":  177220,
+        "sha256":  "c830ea7f8ee410c6db5464aba64a3ccc2057c09a668051a077f01516e3ef70b6"
+    },
+    {
+        "path":  "models/thumbs/cabeca-semi-realista.png",
+        "bytes":  161846,
+        "sha256":  "aa90126657b139c623f8c0a04ec31b0b59dca313dd4c93870a7f349c05ad2cf2"
+    },
+    {
+        "path":  "models/thumbs/ecorche.png",
+        "bytes":  148730,
+        "sha256":  "846b1cceb2524358d52a7f7e5ce5d700188d88bbe5a6c1fe86f059bd74679009"
+    },
+    {
+        "path":  "models/thumbs/forma-cilindro.png",
+        "bytes":  13365,
+        "sha256":  "8431596db71d5a68f5d471c4d37d80692d2764882f4598498bc76e1c63226ec2"
+    },
+    {
+        "path":  "models/thumbs/forma-cone-facetado.png",
+        "bytes":  13809,
+        "sha256":  "158bf171870a07310dabdd5916a19c88723491f0ae74a2186adb0f958420eb06"
+    },
+    {
+        "path":  "models/thumbs/forma-cone.png",
+        "bytes":  27976,
+        "sha256":  "861602ff40d6129ae278c55141b36562e868f3dcd1ef37aa5c3b1cb16b2b0638"
+    },
+    {
+        "path":  "models/thumbs/forma-cubo.png",
+        "bytes":  13001,
+        "sha256":  "8c601ea47b7cc82fb0678cb8b00554f98bc3ad048d92ca72e7d5d9d8b884bcf0"
+    },
+    {
+        "path":  "models/thumbs/forma-esfera.png",
+        "bytes":  45912,
+        "sha256":  "c77792727e48f0ad40a988b13d4c844b7fe6793a7fac5acdc76ec168b30bbe31"
+    },
+    {
+        "path":  "models/thumbs/furry.png",
+        "bytes":  201298,
+        "sha256":  "b5a1475407deaf087f9c3f429872cfd7ca0b8d31bf3dc5ba42d00ec9ca996ce2"
+    },
+    {
+        "path":  "models/thumbs/homem-romano.png",
+        "bytes":  283275,
+        "sha256":  "980c6f9dd7e23bc353f298f02d52d513316d3c3780741f942db762c152dd9b54"
+    },
+    {
+        "path":  "models/thumbs/mulher-romana.png",
+        "bytes":  251861,
+        "sha256":  "e78142a8d71523c5abb73b3f355aa7a85b777809d12ee8c645ff7e03307a477c"
+    },
+    {
+        "path":  "models/thumbs/tecido-mulher.png",
+        "bytes":  216491,
+        "sha256":  "3302cfe4a2d7b7d288fc9f6459ac28cde0b896efe8fb8fd7947cbf90439263e2"
+    },
+    {
+        "path":  "models/thumbs/torso-masculino.png",
+        "bytes":  169289,
+        "sha256":  "e649820d410b5294a0f34d6a700ee342730c7d97c8184c406c61625202419d78"
+    },
+    {
+        "path":  "models/thumbs/torso-mulher.png",
+        "bytes":  169621,
+        "sha256":  "45e4e84f94597f5e69f5a4b019d25871541aec44a3eef4cfdbc1a21d894e5ba1"
+    },
+    {
+        "path":  "shaders/depthFragment.glsl",
+        "bytes":  634,
+        "sha256":  "12e75d2f1c12eae2f8fe74923f866129a33319ca4a19696aa69a5cc861bd0cd9"
+    },
+    {
+        "path":  "shaders/depthVertex.glsl",
+        "bytes":  375,
+        "sha256":  "40754f556f8e34fff50a58bef41377f23f73b56823f99c18e0a90f01dff7c250"
+    },
+    {
+        "path":  "shaders/floorFragment.glsl",
+        "bytes":  19667,
+        "sha256":  "15f202a37b146ff98bb5bf81bb818c30f1e9c49097663f4db90acc1ddd8f574a"
+    },
+    {
+        "path":  "shaders/surfaceFragment.glsl",
+        "bytes":  33318,
+        "sha256":  "6f49d109481cb352ec9550120e2bf239eb0c91d26ba48577f56995602041d661"
+    },
+    {
+        "path":  "shaders/surfaceVertex.glsl",
+        "bytes":  397,
+        "sha256":  "96c629d1a61f229af88ee493981c5e55a71096f5caa921b1e9d05785e3203325"
+    },
+    {
+        "path":  "index.css",
+        "bytes":  39713,
+        "sha256":  "154e362fce0d2b3de7dd89e9081882ff79cf30a4aad19271b4b89e57be85c000"
+    },
+    {
+        "path":  "index.html",
+        "bytes":  14551,
+        "sha256":  "697e58f3e45b0c84b7be6a4901470c7831ae30acfc0ccfa6f84f7d48d7c57c93"
+    },
+    {
+        "path":  "init.jsx",
+        "bytes":  8397,
+        "sha256":  "484132f2b653905c6a662ac1e9b4494d93792c68663de288968daf72604a22da"
+    },
+    {
+        "path":  "package.json",
+        "bytes":  1965,
+        "sha256":  "b9c067f46220a07670efcc195c39e09866d5edcb26ce10c2f84da89cc76badab"
+    },
+    {
+        "path":  "README_DEV.md",
+        "bytes":  444,
+        "sha256":  "e182679eccbe3a79b4c001686e5d9cae7fe2f07df447ce4db2319481d51115ee"
+    }
+]
